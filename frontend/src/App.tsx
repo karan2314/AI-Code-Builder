@@ -1,10 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import {
-  Bell, BriefcaseBusiness, FileClock, FlaskConical, LayoutDashboard, ListChecks, Network, PlayCircle, Search, ShieldCheck,
+  Bell, BriefcaseBusiness, FileClock, FlaskConical, LayoutDashboard, ListChecks, Network, PlayCircle, ShieldCheck,
   SlidersHorizontal,
 } from "lucide-react";
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
-import { NavLink, Route, Routes, useLocation, useNavigate } from "react-router-dom";
+import { useEffect, useState, type ReactNode } from "react";
+import { NavLink, Route, Routes, useLocation } from "react-router-dom";
 import NewInvestigationDialog from "./components/NewInvestigationDialog";
 import { api } from "./lib/api";
 import AuditLog from "./pages/AuditLog";
@@ -16,7 +16,6 @@ import Dashboard from "./pages/Dashboard";
 import EntityNetwork from "./pages/EntityNetwork";
 import Metrics from "./pages/Metrics";
 import Queue from "./pages/Queue";
-import type { SearchHit } from "./types";
 
 /** "Run new investigation": opens a dialog to investigate the next alert, upload a file to test, or score one transaction. */
 export function NextAlertButton({ className = "" }: { className?: string }) {
@@ -38,58 +37,19 @@ export function NextAlertButton({ className = "" }: { className?: string }) {
   );
 }
 
-function GlobalSearch() {
-  const navigate = useNavigate();
-  const listId = useId();
-  const [q, setQ] = useState("");
-  const [debounced, setDebounced] = useState("");
-  const [open, setOpen] = useState(false);
-  const box = useRef<HTMLDivElement>(null);
-  useEffect(() => { const t = setTimeout(() => setDebounced(q.trim()), 250); return () => clearTimeout(t); }, [q]);
-  const r = useQuery({ queryKey: ["search", debounced], queryFn: () => api.search(debounced), enabled: debounced.length >= 3 });
-  useEffect(() => {
-    const close = (e: MouseEvent) => { if (box.current && !box.current.contains(e.target as Node)) setOpen(false); };
-    document.addEventListener("mousedown", close);
-    return () => document.removeEventListener("mousedown", close);
-  }, []);
-  const go = async (h: SearchHit) => {
-    setOpen(false); setQ("");
-    if (h.kind === "customer") return navigate(`/customers/${h.id}`);
-    if (h.kind === "entity") return navigate(`/network?entity=${encodeURIComponent(h.id)}`);
-    const id = h.case_id ?? (await api.createCase(h.id)).case_id;
-    navigate(`/cases/${id}`);
-  };
-  const hits = debounced.length >= 3 ? r.data?.items ?? [] : [];
+function NotificationBell({ atRisk, className = "" }: { atRisk: number; className?: string }) {
   return (
-    <div ref={box} className="relative w-full max-w-xl">
-      <form role="search" onSubmit={(e) => { e.preventDefault(); if (hits[0]) void go(hits[0]); }}>
-        <label htmlFor="global-search" className="sr-only">Search by case, transaction, customer or entity ID</label>
-        <Search className="pointer-events-none absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" aria-hidden />
-        <input
-          id="global-search" role="combobox" aria-autocomplete="list" value={q} onChange={(e) => { setQ(e.target.value); setOpen(true); }} onFocus={() => setOpen(true)}
-          onKeyDown={(e) => { if (e.key === "Escape") setOpen(false); }}
-          placeholder="Search by case ID, transaction, customer or entity…" autoComplete="off"
-          aria-controls={listId} aria-expanded={open && hits.length > 0}
-          className="w-full rounded-md border border-slate-300 bg-slate-50 py-2 pl-8 pr-3 text-sm focus:bg-white"
-        />
-      </form>
-      {open && debounced.length >= 3 && (
-        <ul id={listId} className="absolute z-40 mt-1 w-full overflow-hidden rounded-md border border-slate-200 bg-white text-sm shadow-lg">
-          {r.isLoading && <li className="px-3 py-2 text-slate-500">Searching…</li>}
-          {!r.isLoading && hits.length === 0 && <li className="px-3 py-2 text-slate-500">No match. Use a full ID such as TXN-…, CASE-…, CUST-…</li>}
-          {hits.map((h) => (
-            <li key={`${h.kind}-${h.id}`}>
-              <button type="button" onClick={() => void go(h)} className="flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-teal-50 focus:bg-teal-50">
-                <span className="w-20 shrink-0 text-xs uppercase text-slate-500">{h.kind}</span>
-                <span className="font-mono text-xs">{h.label}</span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
+    <NavLink to="/queue" className={`relative shrink-0 rounded-full p-2 ${className}`} aria-label={`${atRisk} alerts nearing SLA`}>
+      <Bell className="h-5 w-5" aria-hidden />
+      {atRisk > 0 && <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-red-500" aria-hidden />}
+    </NavLink>
   );
 }
+
+const PAGE_TITLES: Record<string, string> = {
+  "/": "Fraud Operations Dashboard", "/queue": "Alert queue", "/cases": "Cases", "/network": "Entity network",
+  "/controls": "Models & controls", "/metrics": "Evaluation", "/audit": "Audit log",
+};
 
 function Shell({ children }: { children: ReactNode }) {
   const ov = useQuery({ queryKey: ["overview"], queryFn: api.overview, refetchInterval: 10000 });
@@ -105,6 +65,11 @@ function Shell({ children }: { children: ReactNode }) {
     { to: "/metrics", label: "Evaluation", icon: FlaskConical },
     { to: "/audit", label: "Audit log", icon: FileClock },
   ];
+  const path = loc.pathname;
+  const title = PAGE_TITLES[path]
+    ?? (path.startsWith("/cases/") ? "Case workspace"
+      : path.startsWith("/customers/") ? `Customer 360 · ${decodeURIComponent(path.split("/")[2] ?? "")}`
+      : "Page not found");
   useEffect(() => { document.getElementById("main")?.focus({ preventScroll: true }); }, [loc.pathname]);
   return (
     <div className="flex min-h-screen bg-slate-100">
@@ -123,33 +88,31 @@ function Shell({ children }: { children: ReactNode }) {
             </NavLink>
           ))}
         </nav>
-        <div className="m-3 rounded-md bg-slate-800 p-3 text-xs">
-          <p className="text-slate-400">Signed in as</p>
-          <p className="font-semibold text-white">Fraud Operations</p>
-          <p className="mt-2 text-[11px] text-slate-400">Synthetic data · account actions simulated</p>
+        <div className="m-3 rounded-md bg-slate-800 p-3">
+          <div className="flex items-center gap-2">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-teal-700 text-xs font-semibold text-white" aria-hidden>FO</span>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs text-slate-400">Signed in as</p>
+              <p className="truncate text-sm font-semibold text-white">Fraud Operations</p>
+            </div>
+            <NotificationBell atRisk={atRisk} className="text-slate-300 hover:bg-slate-700 hover:text-white" />
+          </div>
         </div>
       </aside>
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-slate-200 bg-white px-4 py-2.5">
+        {/* Same grey as the page, so the title sits on the canvas; stays opaque so scrolled content doesn't show through. */}
+        <header className="sticky top-0 z-30 flex items-center gap-3 bg-slate-100 px-4 pb-1 pt-5 md:px-6">
           <NavLink to="/" className="flex items-center gap-1 font-bold md:hidden"><ShieldCheck className="h-5 w-5 text-teal-700" aria-hidden />FraudLens</NavLink>
-          <GlobalSearch />
-          <div className="ml-auto flex items-center gap-3">
-            <NavLink to="/queue" className="relative rounded-full p-2 hover:bg-slate-100" aria-label={`${atRisk} alerts nearing SLA`}>
-              <Bell className="h-5 w-5 text-slate-600" aria-hidden />
-              {atRisk > 0 && <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-red-600" aria-hidden />}
-            </NavLink>
-            <span className="flex items-center gap-2 text-sm">
-              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-900 text-xs font-bold text-white" aria-hidden>FO</span>
-              <span className="hidden font-medium sm:inline">Fraud Operations</span>
-            </span>
-          </div>
+          <h1 className="min-w-0 truncate text-2xl font-semibold tracking-tight text-slate-900">{title}</h1>
+          {/* Sidebar is hidden below md, so keep the bell reachable on mobile. */}
+          <NotificationBell atRisk={atRisk} className="ml-auto text-slate-600 hover:bg-slate-200 md:hidden" />
         </header>
         <nav aria-label="Main (mobile)" className="flex gap-1 overflow-x-auto border-b border-slate-200 bg-white px-2 py-1 md:hidden">
           {nav.map(({ to, label }) => (
             <NavLink key={to} to={to} end={to === "/"} className={({ isActive }) => `whitespace-nowrap rounded px-2 py-1 text-xs ${isActive ? "bg-slate-900 text-white" : "text-slate-700"}`}>{label}</NavLink>
           ))}
         </nav>
-        <main id="main" tabIndex={-1} className="w-full max-w-[1500px] flex-1 px-4 py-5 outline-none md:px-6">{children}</main>
+        <main id="main" tabIndex={-1} className="w-full max-w-[1500px] flex-1 px-4 pb-5 pt-1 outline-none md:px-6">{children}</main>
       </div>
     </div>
   );

@@ -18,7 +18,6 @@ export default function Customer360() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold">Customer 360 · <span className="font-mono">{customerId}</span></h1>
       <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
         <Stat label="Segment" value={String(profile.segment)} />
         <Stat label="Account age" value={`${profile.account_age_days} d`} />
