@@ -180,6 +180,6 @@ labels · analyst feedback loop · optional decision-model router benchmark.
 **Video (≤ 3 min):** [link]
 **Code:** [GitHub repo]
 
-Click **Run hero scenario** → watch the agents investigate → approve the Tier 3 case.
+Click **Run new investigation** → **₹1,85,000 account takeover** → watch the agents investigate → approve the Tier 3 case.
 
 <p class="small">Synthetic data only. All account actions are simulated. Not a production banking system.</p>

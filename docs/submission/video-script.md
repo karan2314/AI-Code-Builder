@@ -1,7 +1,8 @@
 # FraudLens AI · Demo video script (target 2:45, hard limit 3:00)
 
 Record on the **deployed Cloud Run URL** (address bar visible), 1440×900, browser zoom 110%. Before recording:
-run the hero scenario once so the AI result is warm, close other tabs and hide bookmarks. Captions on.
+run the hero scenario once (Run new investigation → ₹1,85,000 account takeover) so the AI result is warm,
+open `deck.pdf` at the Impact slide in a second window, close other tabs and hide bookmarks. Captions on.
 
 | Time | Narration (spoken, ~380 words total) | On screen |
 |---|---|---|
@@ -14,9 +15,10 @@ run the hero scenario once so the AI result is warm, close other tabs and hide b
 | 2:05–2:20 | "The network graph shows why: the recipient shares a device with confirmed mule accounts." | Network tab, red-outlined nodes |
 | 2:20–2:35 | "Gemini only advises. A deterministic, versioned policy decides: Tier 3, Contain. The restriction is simulated, the analyst approves, and everything lands in an append-only audit trail." | Policy panel, SIMULATED actions, Approve, audit trail |
 | 2:35–2:45 | "And it's not just a canned demo: upload your own transactions, and FraudLens screens them in under a second and lets you investigate any row." | Run new investigation → Upload & test → template → results table → Investigate |
-| 2:45–2:50 | "On held-out data, the ML blend raises recall well above rules alone, and we publish every metric from our evaluation scripts. The architecture scales on Cloud Run, with LLM cost tied to candidates, not volume." | Evaluation page table |
+| 2:45–2:50 | "On held-out data, FraudLens catches 41 more frauds than rules alone, at a hundred and thirty-nine times lower LLM cost than investigating everything. Every number comes from our evaluation scripts. The architecture scales on Cloud Run, with LLM cost tied to candidates, not volume." | Deck Impact slide (rules vs FraudLens table); optionally Overview → Model performance card |
 | 2:50–3:00 | "FraudLens AI: explainable, auditable fraud investigation, built with Gemini on Google Cloud." | End card: URL, repo, "synthetic data, simulated actions" |
 
-Do not state numbers that aren't on screen; read them from the Evaluation page.
+Do not state numbers that aren't on screen; read them from the deck Impact slide (generated from
+`docs/metrics/impact.json`, also served by `GET /api/metrics`).
 
 Upload: YouTube (Public or Unlisted) or Drive ("Anyone with the link"), then test the link in a logged-out window.
