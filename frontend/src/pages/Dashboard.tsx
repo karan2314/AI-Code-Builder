@@ -1,10 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
-import { AlertTriangle, Clock, Download, Fingerprint, IndianRupee, Inbox, Link2, ShieldAlert, Users, Zap } from "lucide-react";
+import { AlertTriangle, ArrowDown, ArrowUp, Download, Fingerprint, Link2, Users, Zap } from "lucide-react";
 import { useMemo, useState, type ReactNode } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import { NextAlertButton } from "../App";
-import { Card, Chip, Delta, ErrorBox, Loading, PriorityBadge, SlaChip } from "../components/ui";
+import { Card, Chip, ErrorBox, Loading, PriorityBadge, SlaChip } from "../components/ui";
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow, TableScrollBox, stickyHeader } from "../components/ui/table";
 import { api } from "../lib/api";
 import { dateTime, formatINR, formatINRCompact, formatNum, humanize, maskId, pct, slaText } from "../lib/format";
 import type { Insight, Priority, QueueItem } from "../types";
@@ -13,16 +14,25 @@ const PRIO_COLOR: Record<Priority, string> = { P1: "#dc2626", P2: "#f59e0b", P3:
 const PRIO_LABEL: Record<Priority, string> = { P1: "High", P2: "Medium", P3: "Low" };
 const INSIGHT_ICON: Record<string, typeof Zap> = { shared_device: Fingerprint, fraud_link: Link2, velocity: Zap, new_payee_high_value: Users };
 
-function Kpi({ icon, label, value, children, tone = "slate" }: { icon: ReactNode; label: string; value: ReactNode; children?: ReactNode; tone?: "red" | "amber" | "slate" | "teal" }) {
-  const ring = { red: "bg-red-50 text-red-700", amber: "bg-amber-50 text-amber-700", slate: "bg-slate-100 text-slate-700", teal: "bg-teal-50 text-teal-700" }[tone];
+/** Metric tile from the line-charts-6 template (chart omitted). `lowerIsBetter` flips the badge colour, as the template's isNegative. */
+function Kpi({ label, value, previous, format = formatNum, lowerIsBetter = false, sub }:
+  { label: string; value: number; previous?: number; format?: (n: number) => string; lowerIsBetter?: boolean; sub?: ReactNode }) {
+  const change = previous ? ((value - previous) / previous) * 100 : null;
+  const good = change !== null && (lowerIsBetter ? change < 0 : change > 0);
   return (
-    <div className="flex gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-      <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${ring}`} aria-hidden>{icon}</span>
-      <div className="min-w-0">
-        <div className="text-xs font-medium text-slate-500">{label}</div>
-        <div className="mt-0.5 text-2xl font-bold text-slate-900">{value}</div>
-        <div className="mt-0.5">{children}</div>
+    <div className="flex-1 rounded-xl border border-border bg-white p-4 shadow-xs">
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <span className="text-sm text-muted-foreground">{label}</span>
+        {change !== null && change !== 0 && (
+          <span className={`inline-flex h-6 items-center gap-1 rounded-md border px-[0.45rem] text-xs font-medium ${good ? "border-green-200 bg-green-50 text-green-700" : "border-red-100 bg-red-50 text-red-700"}`}
+            aria-label={`${change > 0 ? "up" : "down"} ${Math.abs(change).toFixed(1)}% vs previous 24h`}>
+            {change > 0 ? <ArrowUp className="size-3" aria-hidden /> : <ArrowDown className="size-3" aria-hidden />}
+            {Math.abs(change).toFixed(1)}%
+          </span>
+        )}
       </div>
+      <div className="text-2xl font-semibold tracking-tight text-slate-900">{format(value)}</div>
+      <div className="mt-1 text-xs text-muted-foreground">{sub ?? (previous !== undefined && `from ${format(previous)}`)}</div>
     </div>
   );
 }
@@ -33,8 +43,7 @@ function PriorityQueue({ items }: { items: QueueItem[] }) {
   const [filter, setFilter] = useState("");
   const counts = useMemo(() => ({ all: items.length, P1: items.filter((i) => i.priority === "P1").length, P2: items.filter((i) => i.priority === "P2").length, P3: items.filter((i) => i.priority === "P3").length }), [items]);
   const rows = items
-    .filter((i) => (tab === "all" || i.priority === tab) && (!filter || `${i.transaction_id} ${i.customer_id}`.toLowerCase().includes(filter.toLowerCase())))
-    .slice(0, 8);
+    .filter((i) => (tab === "all" || i.priority === tab) && (!filter || `${i.transaction_id} ${i.customer_id}`.toLowerCase().includes(filter.toLowerCase())));
   const open = async (i: QueueItem) => navigate(`/cases/${i.case_id ?? (await api.createCase(i.transaction_id)).case_id}`);
   return (
     <Card title="Priority review queue" actions={<Link to="/queue" className="text-sm text-teal-700 underline">View all</Link>}>
@@ -51,31 +60,34 @@ function PriorityQueue({ items }: { items: QueueItem[] }) {
           <input value={filter} onChange={(e) => setFilter(e.target.value)} placeholder="Filter customer or transaction…" className="rounded border border-slate-300 px-2 py-1 text-xs" />
         </label>
       </div>
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <caption className="sr-only">Highest priority alerts. Press Enter on a row to open the case.</caption>
-          <thead className="text-left text-xs uppercase text-slate-500">
-            <tr><th className="py-1.5">Risk</th><th>Transaction</th><th>Customer</th><th className="text-right">Amount</th><th className="pl-3">Signals</th><th>SLA</th><th>Assigned</th></tr>
-          </thead>
-          <tbody>
+      <TableScrollBox rows={5}>
+        <Table>
+          <TableCaption className="sr-only">Highest priority alerts. Press Enter on a row to open the case.</TableCaption>
+          <TableHeader className={stickyHeader}>
+            <TableRow className="hover:bg-transparent">
+              <TableHead className="h-11">Risk</TableHead><TableHead className="h-11">Transaction</TableHead><TableHead className="h-11">Customer</TableHead>
+              <TableHead className="h-11 text-right">Amount</TableHead><TableHead className="h-11">Signals</TableHead><TableHead className="h-11">SLA</TableHead><TableHead className="h-11">Assigned</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {rows.map((i) => (
-              <tr key={i.transaction_id} tabIndex={0} onClick={() => void open(i)}
+              <TableRow key={i.transaction_id} tabIndex={0} onClick={() => void open(i)}
                   onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); void open(i); } }}
                   aria-label={`Open ${i.transaction_id}, priority ${i.priority}, ${formatINR(i.amount_rupees)}`}
-                  className="cursor-pointer border-t border-slate-100 hover:bg-teal-50 focus:bg-teal-50">
-                <td className="py-2"><PriorityBadge p={i.priority} /></td>
-                <td className="font-mono text-xs">{i.transaction_id}<div className="font-sans text-[11px] text-slate-500">{dateTime(i.timestamp)}</div></td>
-                <td className="font-mono text-xs">{maskId(i.customer_id)}</td>
-                <td className="whitespace-nowrap text-right font-semibold">{formatINR(i.amount_rupees)}</td>
-                <td className="max-w-[16rem] pl-3"><div className="flex flex-wrap gap-1">{i.reason_codes.slice(0, 2).map((r) => <Chip key={r}>{humanize(r)}</Chip>)}{i.reason_codes.length > 2 && <Chip>+{i.reason_codes.length - 2}</Chip>}</div></td>
-                <td><SlaChip sla={i.sla} text={slaText(i.sla)} /></td>
-                <td className="whitespace-nowrap text-xs">{i.assignee ?? <span className="text-slate-500">Unassigned</span>}</td>
-              </tr>
+                  className="cursor-pointer focus:bg-muted">
+                <TableCell><PriorityBadge p={i.priority} /></TableCell>
+                <TableCell className="font-mono text-xs">{i.transaction_id}<div className="font-sans text-[11px] text-slate-500">{dateTime(i.timestamp)}</div></TableCell>
+                <TableCell className="whitespace-nowrap font-mono text-xs">{maskId(i.customer_id)}</TableCell>
+                <TableCell className="whitespace-nowrap text-right font-semibold">{formatINR(i.amount_rupees)}</TableCell>
+                <TableCell className="max-w-[16rem]"><div className="flex flex-wrap gap-1">{i.reason_codes.slice(0, 2).map((r) => <Chip key={r}>{humanize(r)}</Chip>)}{i.reason_codes.length > 2 && <Chip>+{i.reason_codes.length - 2}</Chip>}</div></TableCell>
+                <TableCell><SlaChip sla={i.sla} text={slaText(i.sla)} /></TableCell>
+                <TableCell className="whitespace-nowrap text-xs">{i.assignee ?? <span className="text-slate-500">Unassigned</span>}</TableCell>
+              </TableRow>
             ))}
-            {rows.length === 0 && <tr><td colSpan={7} className="py-4 text-center text-sm text-slate-500">No alerts match.</td></tr>}
-          </tbody>
-        </table>
-      </div>
+            {rows.length === 0 && <TableRow><TableCell colSpan={7} className="h-24 text-center text-muted-foreground">No alerts match.</TableCell></TableRow>}
+          </TableBody>
+        </Table>
+      </TableScrollBox>
     </Card>
   );
 }
@@ -86,7 +98,7 @@ function ModelPerformance() {
   const b = m.data?.detection?.variants?.B_ml_blend;
   const ag = m.data?.agentic as { sample?: { tier_vs_label_agreement?: number }; evidence_validity_rate_mean?: number; investigation_latency_ms?: { p50?: number } } | null | undefined;
   const cell = (label: string, value: string) => (
-    <div className="rounded-md bg-slate-50 p-2 text-center"><div className="text-[11px] text-slate-500">{label}</div><div className="text-lg font-bold">{value}</div></div>
+    <div className="rounded-md bg-slate-50 p-2 text-center"><div className="text-[11px] text-slate-500">{label}</div><div className="text-lg font-semibold">{value}</div></div>
   );
   return (
     <Card title="Model performance" actions={<Link to="/metrics" className="text-sm text-teal-700 underline">View details</Link>}>
@@ -141,7 +153,6 @@ export default function Dashboard() {
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold">Fraud Operations Dashboard</h1>
           <p className="text-sm text-slate-600">Monitor high-risk activity, investigate suspicious cases and take action.</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -152,22 +163,15 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
-        <Kpi icon={<ShieldAlert className="h-4 w-4" />} tone="red" label="High-risk alerts (24h)" value={formatNum(k.high_risk_alerts.value)}>
-          <Delta delta={k.high_risk_alerts.delta} />
-        </Kpi>
-        <Kpi icon={<IndianRupee className="h-4 w-4" />} tone="amber" label="Potential exposure (24h)" value={formatINRCompact(k.potential_exposure_rupees.value)}>
-          <Delta delta={k.potential_exposure_rupees.delta} format={formatINRCompact} />
-        </Kpi>
-        <Kpi icon={<Clock className="h-4 w-4" />} tone="amber" label="Alerts nearing SLA" value={formatNum(k.nearing_sla.value)}>
-          <span className="text-xs text-slate-500">{k.nearing_sla.breached} past SLA (7d)</span>
-        </Kpi>
-        <Kpi icon={<Inbox className="h-4 w-4" />} label="Alerts awaiting review (24h)" value={formatNum(k.awaiting_review.value)}>
-          <Delta delta={k.awaiting_review.delta} />
-        </Kpi>
-        <Kpi icon={<Zap className="h-4 w-4" />} tone="teal" label="Transactions screened (24h)" value={formatNum(k.transactions_screened.value)}>
-          <span className="text-xs text-slate-500">{pct(o.alert_rate_24h, 2)} alerted · no LLM</span>
-        </Kpi>
+      <div className="@container">
+        <div className="grid gap-3 @2xl:grid-cols-5">
+          <Kpi label="High-risk alerts (24h)" value={k.high_risk_alerts.value} previous={k.high_risk_alerts.previous} lowerIsBetter />
+          <Kpi label="Potential exposure (24h)" value={k.potential_exposure_rupees.value} previous={k.potential_exposure_rupees.previous} format={formatINRCompact} lowerIsBetter />
+          <Kpi label="Alerts nearing SLA" value={k.nearing_sla.value} sub={`${k.nearing_sla.breached} past SLA (7d)`} />
+          <Kpi label="Awaiting review (24h)" value={k.awaiting_review.value} previous={k.awaiting_review.previous} lowerIsBetter />
+          <Kpi label="Transactions screened (24h)" value={k.transactions_screened.value} previous={k.transactions_screened.previous}
+            sub={`from ${formatNum(k.transactions_screened.previous)} · ${pct(o.alert_rate_24h, 2)} alerted`} />
+        </div>
       </div>
 
       <div className="grid gap-4 xl:grid-cols-3">
@@ -185,7 +189,7 @@ export default function Dashboard() {
                   </PieChart>
                 </ResponsiveContainer>
                 <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-xl font-bold">{formatNum(totalAlerts)}</span><span className="text-[11px] text-slate-500">alerts</span>
+                  <span className="text-xl font-semibold">{formatNum(totalAlerts)}</span><span className="text-[11px] text-slate-500">alerts</span>
                 </div>
               </div>
               <ul className="flex-1 space-y-1.5 text-sm">

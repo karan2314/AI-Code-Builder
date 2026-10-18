@@ -2,13 +2,14 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Card, Chip, ErrorBox, Loading, PriorityBadge, RiskBar, SlaChip, TierBadge } from "../components/ui";
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
 import { api } from "../lib/api";
 import { dateTime, formatINR, humanize, maskId, slaText } from "../lib/format";
 import type { BoardItem } from "../types";
 
 const GROUPS: { key: string; label: string; match: (c: BoardItem) => boolean }[] = [
   { key: "review", label: "Awaiting review", match: (c) => ["awaiting_review", "manual_review", "investigating"].includes(c.status) },
-  { key: "open", label: "Not investigated", match: (c) => c.status === "open" },
+  { key: "open", label: "Pending investigation", match: (c) => c.status === "open" },
   { key: "done", label: "Resolved", match: (c) => ["approved", "modified", "closed"].includes(c.status) },
 ];
 
@@ -29,7 +30,6 @@ export default function Cases() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold">Cases</h1>
           <p className="text-sm text-slate-600">Every alert opened as a case, with its policy tier, owner, SLA and outcome.</p>
         </div>
         <label className="text-sm">Assignee{" "}
@@ -46,24 +46,28 @@ export default function Cases() {
         if (!rows.length) return null;
         return (
           <Card key={g.key} title={`${g.label} (${rows.length})`}>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <caption className="sr-only">{g.label} cases</caption>
-                <thead className="text-left text-xs uppercase text-slate-500">
-                  <tr><th className="py-1.5">Priority</th><th>Case</th><th>Customer</th><th className="text-right">Amount</th><th className="pl-3">Risk</th><th>Tier</th><th>Status</th><th>SLA</th><th>Assignee</th><th>Updated</th></tr>
-                </thead>
-                <tbody>
+            <div className="overflow-hidden rounded-lg border border-border bg-white">
+              <Table>
+                <TableCaption className="sr-only">{g.label} cases</TableCaption>
+                <TableHeader>
+                  <TableRow className="hover:bg-transparent">
+                    {["Priority", "Case", "Customer", "Amount", "Risk", "Tier", "Status", "SLA", "Assignee", "Updated"].map((h) => (
+                      <TableHead key={h} className={h === "Amount" ? "h-11 text-right" : "h-11"}>{h}</TableHead>
+                    ))}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {rows.map((c) => (
-                    <tr key={c.case_id} className="border-t border-slate-100">
-                      <td className="py-2"><PriorityBadge p={c.priority} /></td>
-                      <td className="font-mono text-xs"><Link to={`/cases/${c.case_id}`} className="font-semibold text-teal-800 underline">{c.case_id}</Link><div className="text-slate-500">{c.transaction_id}</div></td>
-                      <td className="font-mono text-xs">{maskId(c.customer_id)}</td>
-                      <td className="whitespace-nowrap text-right font-semibold">{formatINR(c.amount_rupees)}</td>
-                      <td className="pl-3"><RiskBar value={c.risk_score} /></td>
-                      <td><TierBadge tier={c.tier} /></td>
-                      <td className="whitespace-nowrap"><Chip>{humanize(c.status)}</Chip>{c.override && <Chip tone="amber">override</Chip>}</td>
-                      <td><SlaChip sla={c.sla} text={slaText(c.sla)} /></td>
-                      <td>
+                    <TableRow key={c.case_id}>
+                      <TableCell><PriorityBadge p={c.priority} /></TableCell>
+                      <TableCell className="font-mono text-xs"><Link to={`/cases/${c.case_id}`} className="font-semibold text-teal-800 underline">{c.case_id}</Link><div className="text-slate-500">{c.transaction_id}</div></TableCell>
+                      <TableCell className="whitespace-nowrap font-mono text-xs">{maskId(c.customer_id)}</TableCell>
+                      <TableCell className="whitespace-nowrap text-right font-semibold">{formatINR(c.amount_rupees)}</TableCell>
+                      <TableCell><RiskBar value={c.risk_score} /></TableCell>
+                      <TableCell><TierBadge tier={c.tier} /></TableCell>
+                      <TableCell className="whitespace-nowrap"><Chip>{humanize(c.status)}</Chip>{c.override && <Chip tone="amber">override</Chip>}</TableCell>
+                      <TableCell><SlaChip sla={c.sla} text={slaText(c.sla)} /></TableCell>
+                      <TableCell>
                         <label className="sr-only" htmlFor={`as-${c.case_id}`}>Assignee for {c.case_id}</label>
                         <select id={`as-${c.case_id}`} value={c.assignee ?? ""} disabled={assign.isPending}
                           onChange={(e) => assign.mutate({ id: c.case_id, who: e.target.value || null })}
@@ -71,12 +75,12 @@ export default function Cases() {
                           <option value="">Unassigned</option>
                           {analysts.data?.items.map((a) => <option key={a}>{a}</option>)}
                         </select>
-                      </td>
-                      <td className="whitespace-nowrap text-xs text-slate-500">{dateTime(c.updated_at)}</td>
-                    </tr>
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap text-xs text-slate-500">{dateTime(c.updated_at)}</TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
           </Card>
         );
