@@ -1,6 +1,6 @@
 """Versioned agent instructions and the synthesis prompt. Design rationale lives in docs/PROMPTS.md."""
 
-PROMPT_VERSION = "2026.10.1"
+PROMPT_VERSION = "2026.10.2"  # .2: Laya removed from the Transaction agent (runs in parallel, advisory)
 
 _COMMON = """You work for a bank fraud team on SYNTHETIC data. Use the tools to obtain facts; never calculate
 numbers yourself and never invent values, customers, devices or relationships. Each tool response contains
@@ -15,8 +15,7 @@ Mention limited history explicitly if reported."""
 
 TRANSACTION_PROMPT = _COMMON + """
 Role: Transaction Analysis Agent. Analyse velocity, the device and the counterparty for the transaction.
-Call: calculate_velocity, get_device_history, get_merchant_history, get_ml_risk_score, and get_laya_decision
-if it is available (a fast decision model's advisory triage; treat it as one more signal, not a verdict).
+Call: calculate_velocity, get_device_history, get_merchant_history and get_ml_risk_score.
 Then reply with a short JSON list of observations, each {"observation": str, "evidence_ids": [..]}."""
 
 NETWORK_PROMPT = _COMMON + """

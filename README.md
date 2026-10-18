@@ -52,6 +52,16 @@ flowchart LR
   stale links, limited history, missing AI). Gemini's tier is advisory and disagreements are shown.
 * **Graceful degradation:** if Gemini or a tool fails, the ML score and deterministic evidence are kept, missing
   evidence is marked `unavailable`, and the case goes to manual review.
+* **Progressive autonomy, human decides:** every case carries an autonomy level on a four-step ladder
+  (L1 manual · L2 AI investigates, human decides · L3 AI recommends with sampled review · L4 auto-close within
+  guardrails). FraudLens runs at **L2** (L1 when the AI is unavailable). Monitor-tier cases are the only ones
+  eligible for L3 after shadow-mode validation; Verify / Contain are capped at L2 by design.
+* **Resolve, not just alert:** the analyst opens a finished investigation package (evidence, timeline, network,
+  cited summary and a deterministic *assumptions & limitations* list) instead of a blank page. Risk is shown on a
+  bank-familiar 0–1000 scale (display only; the model output is unchanged).
+* **Overrides are the feedback loop:** approving keeps the policy tier; changing it or closing a Tier 2/3 case is
+  an override that requires a reason, is written to the append-only audit trail, and feeds live
+  analyst-vs-policy and analyst-vs-Gemini agreement rates on the metrics page.
 
 ## Measured results (synthetic held-out test split)
 
@@ -81,8 +91,10 @@ candidates):
 |---|---|---|---|---|---|
 | 221 of 221 | 0.8235 | 0.8505 | 0.0 | 0.3451 / 0.6974 | 9.4 s / 10.5 s |
 
-Zero-shot Laya adds no value over B on this task, so it ships integrated but disabled (`ENABLE_LAYA=false`), as the
-BRD prescribes. Source: `docs/metrics/laya_eval.json`. See `docs/DECISIONS.md`.
+Zero-shot Laya adds no measured value over B on this task, so it is **advisory only**: in the live deployment
+(`ENABLE_LAYA=true`) it runs in parallel with the agents, appears as one ML-family evidence item and a triage panel,
+is compared with the policy tier (disagreements are flagged), and never sets the tier. Locally it defaults to
+`ENABLE_LAYA=false`. Source: `docs/metrics/laya_eval.json`. See `docs/DECISIONS.md`.
 
 ## Run locally
 

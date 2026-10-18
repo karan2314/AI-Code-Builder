@@ -8,6 +8,7 @@ from pathlib import Path
 from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse, JSONResponse
 
+from app.api.ops import router as ops_router
 from app.api.routes import router
 from app.config import settings
 from app.observability import log_event, setup_logging
@@ -28,6 +29,7 @@ async def lifespan(_: FastAPI):
 app = FastAPI(title="FraudLens AI", version="0.1.0", lifespan=lifespan,
               description="Agentic fraud investigation on SYNTHETIC data. All actions are simulated.")
 app.include_router(router)
+app.include_router(ops_router)
 
 MAX_BODY_BYTES = 256 * 1024
 

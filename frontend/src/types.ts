@@ -60,6 +60,10 @@ export interface PolicyDecision {
   disagreement: boolean;
   laya_route: string | null;
   laya_disagreement: boolean;
+  autonomy_level?: 1 | 2 | 3 | 4;
+  autonomy_label?: string;
+  autonomy_ceiling?: 1 | 2 | 3 | 4;
+  limitations?: string[];
 }
 
 export interface TrajectoryStep {
@@ -106,7 +110,73 @@ export interface Case {
   versions: Record<string, string>;
   usage: Record<string, unknown>;
   analyst_action: Record<string, unknown> | null;
+  assignee?: string | null;
   audit: AuditEvent[];
+  priority?: Priority;
+  sla?: Sla;
+}
+
+export type Priority = "P1" | "P2" | "P3";
+
+export interface Sla {
+  target_minutes: number;
+  remaining_minutes: number | null;
+  state: "on_track" | "at_risk" | "breached" | "resolved";
+}
+
+export interface KpiPair { value: number; previous: number; delta: number }
+
+export interface Insight {
+  id: string;
+  title: string;
+  count: number;
+  previous: number;
+  change: number | null;
+  detail: string;
+  severity: "high" | "medium";
+}
+
+export interface Overview {
+  as_of: string;
+  window_hours: number;
+  kpis: {
+    high_risk_alerts: KpiPair;
+    potential_exposure_rupees: KpiPair;
+    nearing_sla: { value: number; breached: number };
+    awaiting_review: KpiPair;
+    transactions_screened: KpiPair;
+  };
+  alert_rate_24h: number;
+  priority_mix_7d: Record<Priority, number>;
+  sla_states_7d: Record<Sla["state"], number>;
+  insights: Insight[];
+}
+
+export interface BoardItem {
+  case_id: string;
+  transaction_id: string;
+  customer_id: string;
+  status: CaseStatus;
+  tier: Tier | null;
+  priority: Priority;
+  risk_score: number;
+  amount_rupees: number;
+  assignee: string | null;
+  investigation_mode: string;
+  override: boolean;
+  sla: Sla;
+  updated_at: string;
+}
+
+export interface SearchHit { kind: "case" | "transaction" | "customer" | "entity"; id: string; label: string; case_id: string | null }
+
+export interface Controls {
+  model: { version: string; threshold: number; blend: Record<string, number> };
+  reason_codes: Record<string, string>;
+  policy: { version: string; config: Record<string, number>; rules: Record<string, string>; tiers: Record<string, { name: string; actions: string[] }> };
+  decision_model?: { name: string; enabled: boolean; role: string };
+  autonomy: { current_level: number; levels: Record<string, string>; ceilings: Record<string, number> };
+  operations: { priority_bands: Record<Priority, string>; sla_minutes: Record<Priority, number>; analysts: string[] };
 }
 
 export interface QueueItem {
@@ -122,6 +192,9 @@ export interface QueueItem {
   case_status: string;
   tier: Tier | null;
   demo: boolean;
+  priority: Priority;
+  sla: Sla;
+  assignee: string | null;
 }
 
 export interface GraphData {
@@ -154,6 +227,13 @@ export interface MetricsResponse {
     avg_evidence_validity_rate: number | null;
     single_score_latency: Record<string, number>;
     case_store: string;
+    analyst_review?: {
+      cases_reviewed: number;
+      overrides: number;
+      policy_agreement_rate: number | null;
+      ai_compared: number;
+      ai_agreement_rate: number | null;
+    };
   };
   detection: {
     generated_at: string;

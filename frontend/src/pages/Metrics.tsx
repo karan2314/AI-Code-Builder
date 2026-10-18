@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Card, ErrorBox, Loading } from "../components/ui";
+import { Card, ErrorBox, Loading, Stat } from "../components/ui";
 import { api } from "../lib/api";
 import { formatNum, humanize, pct } from "../lib/format";
 
@@ -47,6 +47,22 @@ export default function Metrics() {
           <ul className="flex flex-wrap gap-2 text-xs">{det.top_global_features.map(([f, v]) => <li key={f} className="rounded bg-slate-100 px-2 py-0.5">{humanize(f)} <span className="text-slate-700">{v.toFixed(3)}</span></li>)}</ul>
         </Card>
       ) : <Card><p className="text-sm">No detection metrics yet. Run <code>uv run python -m app.ml.train</code>.</p></Card>}
+      {(() => {
+        const r = m.data!.live.analyst_review;
+        if (!r) return null;
+        return (
+          <section aria-labelledby="hitl-heading" className="space-y-2">
+            <h2 id="hitl-heading" className="text-sm font-semibold uppercase tracking-wide text-slate-600">Human in the loop · live (this session's case store)</h2>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <Stat label="Cases reviewed by an analyst" value={formatNum(r.cases_reviewed)} />
+              <Stat label="Analyst ↔ policy agreement" value={r.policy_agreement_rate === null ? "n/a" : pct(r.policy_agreement_rate)} hint={`${r.overrides} override(s), each with a logged reason`} />
+              <Stat label="Analyst ↔ Gemini agreement" value={r.ai_agreement_rate === null ? "n/a" : pct(r.ai_agreement_rate)} hint={`${r.ai_compared} case(s) with an AI tier`} />
+              <Stat label="Autonomy level" value="L2" hint="AI investigates, human decides every case" />
+            </div>
+            <p className="text-xs text-slate-500">Live counters, not evaluation results. Overrides are the feedback signal used to review agent and policy configuration.</p>
+          </section>
+        );
+      })()}
       <Card title="Agentic investigation (Variant D)">
         {agentic ? <pre className="overflow-auto text-xs">{JSON.stringify(agentic, null, 2)}</pre>
           : <p className="text-sm text-slate-500">Not measured yet. Run <code>uv run python -m evals.run_benchmark</code> with Gemini enabled.</p>}

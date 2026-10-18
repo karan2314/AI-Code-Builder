@@ -7,21 +7,24 @@ import asyncio
 import threading
 import time
 import uuid
+from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime
 
 from google.genai import types
 
 from app.agents.context import InvestigationContext
 from app.agents.fraudlens.prompts import PROMPT_VERSION
+from app.ai import laya_client
 from app.ai.synthesis import build_evidence_package, synthesize_grounded, validate_citations
 from app.config import settings
 from app.observability import log_event
 from app.policy.engine import POLICY_VERSION, decide
 from app.schemas import AnalystAction, Case
 from app.services import get_services
+from app.tools.laya import get_laya_decision
 
 SYSTEM = "system"
-DEMO_ANALYST = "analyst:demo"
+DEMO_ANALYST = "analyst:fraud_ops"  # single shared analyst identity (no auth in this prototype)
 
 
 class CaseError(ValueError):
@@ -47,6 +50,7 @@ def create_case(transaction_id: str) -> Case:
                 versions={"model": ml.model_version, "policy": POLICY_VERSION, "prompt": PROMPT_VERSION,
                           "gemini_model": settings.gemini_model})
     svc.cases.save(case)
+    laya_client.warm()  # an investigation usually follows: wake the advisory model (async, throttled)
     svc.cases.append_audit(case.case_id, "case_created", SYSTEM, {"transaction_id": transaction_id,
                                                                     "risk_score": ml.risk_score,
                                                                     "reason_codes": ml.reason_codes})
@@ -70,8 +74,7 @@ def _deterministic_investigation(ctx: InvestigationContext, txn: dict) -> None:
             if node not in entities and len(entities) < 10:
                 entities.append(node)
     ctx.run_tool(a, "search_known_fraud_cases", entity_ids=entities, transaction_id=tid)
-    if settings.enable_laya:
-        ctx.run_tool(a, "get_laya_decision", transaction_id=tid)
+    # Laya (when enabled) is called once, in parallel, by investigate(); see _record_laya.
 
 
 async def _agentic_investigation(ctx: InvestigationContext, txn: dict, ml) -> dict:
@@ -154,6 +157,9 @@ def investigate(case_id: str, use_ai: bool | None = None) -> Case:
                            {"ai_enabled": use_ai, "ai_budget_exhausted": budget_exhausted})
 
     t_start = time.perf_counter()
+    # Variant C: the advisory Laya triage runs in parallel with the agents (it is a separate model service,
+    # ~9 s warm), so its latency never eats into the agent time budget.
+    laya_future = _LAYA_POOL.submit(_laya_call, txn["transaction_id"]) if settings.enable_laya else None
     with InvestigationContext(case_id, txn, progress_cb=progress) as ctx:
         usage: dict = {}
         if use_ai:
@@ -177,9 +183,10 @@ def investigate(case_id: str, use_ai: bool | None = None) -> Case:
             else:
                 _deterministic_investigation(ctx, txn)
 
-        # Variant C: make sure the advisory Laya triage is present when enabled (agents may skip it)
-        if settings.enable_laya and "get_laya_decision" not in {e.source_tool for e in ctx.evidence}:
-            ctx.run_tool("deterministic_fallback", "get_laya_decision", transaction_id=txn["transaction_id"])
+        # Variant C: record the advisory Laya triage (started in parallel above)
+        if laya_future is not None:
+            progress("decision_model:laya")
+            _record_laya(ctx, txn["transaction_id"], laya_future)
 
         case.evidence = list(ctx.evidence)
         case.trajectory = list(ctx.trajectory)
@@ -245,6 +252,32 @@ def investigate_with_cache(case_id: str, use_ai: bool | None = None) -> Case:
     return case
 
 
+_LAYA_POOL = ThreadPoolExecutor(max_workers=4, thread_name_prefix="laya")
+
+
+def _laya_call(transaction_id: str) -> tuple[dict | None, str | None, float]:
+    t0 = time.perf_counter()
+    try:
+        return get_laya_decision(transaction_id), None, t0
+    except Exception as e:  # unavailable is recorded as evidence, never inferred
+        return None, f"{type(e).__name__}: {e}", t0
+
+
+def _record_laya(ctx: InvestigationContext, transaction_id: str, future) -> None:
+    agent, tool, args = "decision_model", "get_laya_decision", {"transaction_id": transaction_id}
+    key = f"{tool}-laya"
+    try:
+        response, error, t0 = future.result(timeout=settings.laya_timeout_s + 5)
+    except Exception as e:
+        response, error, t0 = None, f"timeout waiting for Laya ({type(e).__name__})", time.perf_counter()
+    ctx.calls += 1
+    ctx._starts[key] = t0  # latency in the trajectory = real Laya latency
+    if response is None:
+        ctx.fail(agent, tool, args, error or "unavailable", key)
+    else:
+        ctx.capture(agent, tool, args, response, key)
+
+
 def _complete_missing(ctx: InvestigationContext, txn: dict, have: set[str]) -> None:
     a, tid = "deterministic_fallback", txn["transaction_id"]
     if "calculate_customer_deviation" not in have:
@@ -256,6 +289,12 @@ def _complete_missing(ctx: InvestigationContext, txn: dict, have: set[str]) -> N
                      transaction_id=tid)
 
 
+def analyst_final_tier(action: str, tier: int | None, policy_tier: int | None) -> int | None:
+    """The tier the analyst effectively chose: approve keeps the policy tier, modify sets one,
+    close dismisses the case (equivalent to Tier 1 / no customer-impacting action)."""
+    return {"approve": policy_tier, "modify": tier, "close": 1}[action]
+
+
 def record_analyst_action(case_id: str, action: AnalystAction, actor: str = DEMO_ANALYST) -> Case:
     svc = get_services()
     case = svc.cases.get(case_id)
@@ -265,10 +304,53 @@ def record_analyst_action(case_id: str, action: AnalystAction, actor: str = DEMO
         raise CaseError("case has not been investigated yet")
     if action.action == "modify" and (action.tier is None or not action.reason.strip()):
         raise CaseError("modify requires a tier and a reason")
+    policy_tier = case.decision.tier if case.decision else None
+    ai_tier = case.decision.llm_recommended_tier if case.decision else None
+    final_tier = analyst_final_tier(action.action, action.tier, policy_tier)
+    override = policy_tier is not None and final_tier != policy_tier
+    if override and not action.reason.strip():
+        raise CaseError("overriding the policy tier requires a reason")
     case.status = {"approve": "approved", "modify": "modified", "close": "closed"}[action.action]
     case.analyst_action = {**action.model_dump(), "actor": actor, "at": _now().isoformat(),
-                           "policy_tier": case.decision.tier if case.decision else None}
+                           "policy_tier": policy_tier, "ai_tier": ai_tier, "final_tier": final_tier,
+                           "override": override,
+                           "agrees_with_ai": None if ai_tier is None or final_tier is None else final_tier == ai_tier}
     case.updated_at = _now()
     svc.cases.save(case)
     svc.cases.append_audit(case_id, f"analyst_{action.action}", actor, case.analyst_action)
+    return case
+
+
+def assign_case(case_id: str, assignee: str | None, actor: str = DEMO_ANALYST) -> Case:
+    svc = get_services()
+    case = svc.cases.get(case_id)
+    if case is None:
+        raise CaseError(f"unknown case {case_id}")
+    previous = case.assignee
+    case.assignee = assignee
+    case.updated_at = _now()
+    svc.cases.save(case)
+    svc.cases.append_audit(case_id, "case_assigned" if assignee else "case_unassigned", actor,
+                           {"assignee": assignee, "previous": previous})
+    return case
+
+
+QUICK_ACTION_TIER = {"request_customer_verification": 2, "escalate": 3}
+
+
+def quick_action(case_id: str, action: str, note: str = "", actor: str = DEMO_ANALYST) -> Case:
+    """Analyst-initiated SIMULATED response (verification request / escalation). Never a real action."""
+    svc = get_services()
+    case = svc.cases.get(case_id)
+    if case is None:
+        raise CaseError(f"unknown case {case_id}")
+    if case.status in ("open", "investigating"):
+        raise CaseError("case has not been investigated yet")
+    rec = {"action": f"{action}_simulated", "simulated": True, "tier": QUICK_ACTION_TIER[action],
+           "at": _now().isoformat(), "account_id": case.transaction.get("account_id"), "initiated_by": actor,
+           "note": note, "label": "SIMULATED - no real account was affected"}
+    case.simulated_actions.append(rec)
+    case.updated_at = _now()
+    svc.cases.save(case)
+    svc.cases.append_audit(case_id, "analyst_quick_action", actor, rec)
     return case

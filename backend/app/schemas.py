@@ -94,6 +94,12 @@ class PolicyDecision(BaseModel):
     disagreement: bool = False
     laya_route: str | None = None          # advisory Variant C triage (investigate / monitor / dismiss)
     laya_disagreement: bool = False
+    # Progressive autonomy ladder (1 manual · 2 AI investigates, human decides · 3 AI recommends, sampled review
+    # · 4 auto-close within guardrails). FraudLens never acts autonomously: the level is a governance label.
+    autonomy_level: Literal[1, 2, 3, 4] = 2
+    autonomy_label: str = "AI investigates, human decides"
+    autonomy_ceiling: Literal[1, 2, 3, 4] = 2  # highest level this tier could ever be promoted to after validation
+    limitations: list[str] = []            # deterministic "assumptions & limitations" shown with the AI summary
 
 
 class TrajectoryStep(BaseModel):
@@ -143,10 +149,23 @@ class Case(BaseModel):
     versions: dict[str, str] = {}
     usage: dict[str, Any] = {}
     analyst_action: dict[str, Any] | None = None
+    assignee: str | None = None
 
 
 class CaseCreate(BaseModel):
     transaction_id: str = Field(pattern=r"^TXN-[A-Z0-9-]{3,40}$")
+
+
+ANALYSTS = ("A. Sharma", "R. Verma", "S. Khan", "N. Iyer")
+
+
+class CaseAssign(BaseModel):
+    assignee: Literal["A. Sharma", "R. Verma", "S. Khan", "N. Iyer"] | None = None
+
+
+class QuickAction(BaseModel):
+    action: Literal["request_customer_verification", "escalate"]
+    note: str = Field(default="", max_length=300)
 
 
 class AnalystAction(BaseModel):

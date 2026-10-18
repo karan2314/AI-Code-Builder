@@ -1,4 +1,4 @@
-import type { Case, GraphData, MetricsResponse, QueueItem } from "../types";
+import type { AuditEvent, BoardItem, Case, Controls, GraphData, MetricsResponse, Overview, QueueItem, SearchHit } from "../types";
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(path, {
@@ -28,6 +28,16 @@ export const api = {
     request<Case>(`/api/cases/${encodeURIComponent(id)}/investigate${cached ? "?cached=true" : ""}`, { method: "POST" }),
   action: (id: string, body: { action: "approve" | "modify" | "close"; tier?: number; reason: string }) =>
     request<Case>(`/api/cases/${encodeURIComponent(id)}/action`, { method: "POST", body: JSON.stringify(body) }),
+  overview: () => request<Overview>("/api/overview"),
+  board: (limit = 100) => request<{ items: BoardItem[] }>(`/api/cases-board?limit=${limit}`),
+  search: (q: string) => request<{ items: SearchHit[] }>(`/api/search?q=${encodeURIComponent(q)}`),
+  audit: (limit = 200) => request<{ items: AuditEvent[] }>(`/api/audit?limit=${limit}`),
+  controls: () => request<Controls>("/api/controls"),
+  analysts: () => request<{ items: string[] }>("/api/analysts"),
+  assign: (id: string, assignee: string | null) =>
+    request<Case>(`/api/cases/${encodeURIComponent(id)}/assign`, { method: "POST", body: JSON.stringify({ assignee }) }),
+  quickAction: (id: string, action: "request_customer_verification" | "escalate", note = "") =>
+    request<Case>(`/api/cases/${encodeURIComponent(id)}/quick-action`, { method: "POST", body: JSON.stringify({ action, note }) }),
   demo: (scenario: "hero" | "benign") =>
     request<{ case_id: string; status: string; needs_investigation: boolean }>(`/api/demo/${scenario}`, { method: "POST" }),
   network: (entity: string, transactionId?: string) =>

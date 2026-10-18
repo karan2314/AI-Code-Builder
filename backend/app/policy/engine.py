@@ -141,8 +141,35 @@ def decide(evidence: list[Evidence], summary: InvestigationSummary | None, ml: S
     if laya_disagreement:
         flags.append(f"laya_suggests_{laya_route}")
 
+    # Progressive autonomy (governance label only; every case still needs an analyst decision).
+    # Without an AI summary the analyst investigates manually (L1); otherwise AI investigates, human decides (L2).
+    # Ceiling: Monitor-tier cases could later move to sampled review (L3) once validated in shadow mode;
+    # customer-impacting tiers (Verify / Contain) are capped at L2 by design.
+    autonomy_level = 1 if manual else 2
+    limitations: list[str] = []
+    if manual:
+        limitations.append("No AI summary: decision rests on the ML/rules score and deterministic evidence only.")
+    if unavailable:
+        limitations.append(f"Evidence could not be collected from: {', '.join(unavailable)}. Not inferred.")
+    if stale:
+        limitations.append("Fraud link is stale and must be re-validated before it can justify containment.")
+    if limited:
+        limitations.append("Customer has limited history; behaviour is compared against a cohort baseline.")
+    if conflict:
+        limitations.append("ML score and indicator evidence point in different directions; tier capped for review.")
+    if summary is not None and summary.conflicting_evidence:
+        limitations.append("The AI summary reports conflicting evidence.")
+    if summary is not None and summary.confidence == "low":
+        limitations.append("The AI summary has low confidence.")
+    if not families:
+        limitations.append("No independent indicator family is critical; tier relies on a single signal or ML only.")
+    limitations.append("Synthetic data; thresholds are prototype policy values, not banking standards.")
+
     llm_tier = summary.recommended_tier if summary else None
     return PolicyDecision(
+        autonomy_level=autonomy_level,
+        autonomy_label={1: "Manual: analyst investigates", 2: "AI investigates, human decides"}[autonomy_level],
+        autonomy_ceiling=3 if tier == 1 else 2, limitations=limitations,
         laya_route=laya_route, laya_disagreement=laya_disagreement,
         tier=tier, tier_name=TIER_NAMES[tier], allowed_actions=TIER_ACTIONS[tier], rule_hits=hits,
         critical_families=families, requires_review=requires_review, manual_review=manual, flags=flags,

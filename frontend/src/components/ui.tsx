@@ -43,15 +43,37 @@ export function TierBadge({ tier, size = "sm" }: { tier: Tier | null | undefined
   );
 }
 
+/** Display scale: the 0–1 blended risk score shown as 0–1000 (bank-familiar, display only; the model is unchanged). */
+export const score1000 = (value: number) => Math.round(value * 1000);
+
 export function RiskBar({ value }: { value: number }) {
   const color = value >= 0.85 ? "bg-red-600" : value >= 0.6 ? "bg-amber-500" : "bg-sky-500";
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2" title={`Risk ${score1000(value)} / 1000 (raw ${value.toFixed(3)})`}>
       <div className="h-2 w-16 rounded bg-slate-200" aria-hidden>
         <div className={`h-2 rounded ${color}`} style={{ width: `${Math.round(value * 100)}%` }} />
       </div>
-      <span className="font-mono text-xs">{value.toFixed(2)}</span>
+      <span className="font-mono text-xs">{score1000(value)}<span className="text-slate-500">/1000</span></span>
     </div>
+  );
+}
+
+const AUTONOMY_TEXT: Record<number, string> = {
+  1: "Manual: analyst investigates",
+  2: "AI investigates, human decides",
+  3: "AI recommends, sampled human review",
+  4: "Auto-close within guardrails",
+};
+
+export function AutonomyBadge({ level, ceiling }: { level: number | undefined; ceiling?: number }) {
+  if (!level) return null;
+  return (
+    <span
+      className="inline-flex items-center gap-1 rounded-full border border-violet-300 bg-violet-50 px-2 py-0.5 text-xs font-semibold text-violet-900"
+      title={`Autonomy ladder: L1 manual · L2 AI investigates, human decides · L3 AI recommends, sampled review · L4 auto-close within guardrails.${ceiling ? ` This tier can be promoted up to L${ceiling} after validation.` : ""}`}
+    >
+      Autonomy L{level} · {AUTONOMY_TEXT[level]}
+    </span>
   );
 }
 
@@ -83,5 +105,49 @@ export function ErrorBox({ error }: { error: unknown }) {
     <p role="alert" className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">
       {error instanceof Error ? error.message : String(error)}
     </p>
+  );
+}
+
+const PRIORITY_STYLE: Record<string, string> = {
+  P1: "bg-red-600 text-white",
+  P2: "bg-amber-500 text-white",
+  P3: "bg-sky-600 text-white",
+};
+
+export function PriorityBadge({ p, size = "sm" }: { p: string; size?: "sm" | "lg" }) {
+  return (
+    <span className={`inline-flex items-center justify-center rounded font-bold ${PRIORITY_STYLE[p] ?? "bg-slate-500 text-white"} ${size === "lg" ? "px-2 py-1 text-sm" : "px-1.5 py-0.5 text-[11px]"}`}
+          title={{ P1: "Priority 1 (highest)", P2: "Priority 2", P3: "Priority 3" }[p]}>
+      {p}
+    </span>
+  );
+}
+
+const SLA_STYLE: Record<string, string> = {
+  on_track: "text-teal-800 bg-teal-50 border-teal-200",
+  at_risk: "text-amber-900 bg-amber-50 border-amber-300",
+  breached: "text-red-800 bg-red-50 border-red-200",
+  resolved: "text-slate-600 bg-slate-50 border-slate-200",
+};
+
+export function SlaChip({ sla, text }: { sla: { state: string }; text: string }) {
+  return (
+    <span className={`inline-flex items-center gap-1 whitespace-nowrap rounded border px-1.5 py-0.5 text-[11px] font-medium ${SLA_STYLE[sla.state]}`}
+          title={`SLA ${sla.state.replace("_", " ")} (prototype SLA targets, dataset clock)`}>
+      <span className={`h-1.5 w-1.5 rounded-full ${sla.state === "on_track" ? "bg-teal-600" : sla.state === "at_risk" ? "bg-amber-500" : sla.state === "breached" ? "bg-red-600" : "bg-slate-400"}`} aria-hidden />
+      {text}
+    </span>
+  );
+}
+
+export function Delta({ delta, goodWhenDown = true, suffix = "vs prev 24h", format = (n: number) => String(n) }:
+  { delta: number; goodWhenDown?: boolean; suffix?: string; format?: (n: number) => string }) {
+  if (delta === 0) return <span className="text-xs text-slate-500">no change {suffix}</span>;
+  const up = delta > 0;
+  const good = up !== goodWhenDown;
+  return (
+    <span className={`text-xs font-medium ${good ? "text-teal-700" : "text-red-700"}`}>
+      {up ? "▲" : "▼"} {format(Math.abs(delta))} <span className="font-normal text-slate-500">{suffix}</span>
+    </span>
   );
 }

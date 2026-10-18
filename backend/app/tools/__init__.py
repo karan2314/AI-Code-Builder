@@ -1,6 +1,5 @@
 """Deterministic investigation tools (BRD section 9). Action tools live in app.cases and are never exposed to agents."""
 
-from app.config import settings
 from app.tools.behavior import (
     calculate_customer_deviation,
     get_account_limits,
@@ -25,5 +24,6 @@ ACTION_TOOLS = {"simulate_restriction", "record_action", "create_case"}
 
 
 def transaction_tools() -> list:
-    """Transaction Analysis Agent tools; Laya is added only when ENABLE_LAYA=true (off by default)."""
-    return TRANSACTION_TOOLS + (DECISION_MODEL_TOOLS if settings.enable_laya else [])
+    """Transaction Analysis Agent tools. Laya is NOT given to the agents: when ENABLE_LAYA=true the case service
+    calls it in parallel with the agents (it is a separate model service, ~9 s warm, ~60-80 s cold)."""
+    return list(TRANSACTION_TOOLS)

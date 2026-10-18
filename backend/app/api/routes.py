@@ -11,6 +11,7 @@ from pathlib import Path
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
 
+from app.api import ops
 from app.cases import service
 from app.config import settings
 from app.data.generate import BENIGN_TXN, HERO_TXN
@@ -42,7 +43,7 @@ def rate_limit(request: Request, cost: int = 1) -> None:
         while q and now - q[0] > 60:
             q.popleft()
         if len(q) + cost > settings.rate_limit_per_min:
-            raise HTTPException(429, "Rate limit exceeded; please wait a minute (demo protection)")
+            raise HTTPException(429, "Rate limit exceeded; please wait a minute")
         q.extend([now] * cost)
 
 
@@ -91,12 +92,12 @@ def queue(limit: int = 100) -> dict:
     items = []
     for tid, r in q.iterrows():
         c = cases.get(tid)
-        items.append({"transaction_id": tid, "customer_id": r["customer_id"], "timestamp": r["timestamp"].isoformat(),
+        items.append(ops.enrich({"transaction_id": tid, "customer_id": r["customer_id"], "timestamp": r["timestamp"].isoformat(),
                       "amount_rupees": round(r["amount_paise"] / 100, 2), "channel": r["channel"],
                       "counterparty_id": r["counterparty_id"], "risk_score": round(float(r["risk_score"]), 4),
                       "reason_codes": svc.scorer.score_existing(tid).reason_codes,
                       "case_id": c.case_id if c else None, "case_status": c.status if c else "new",
-                      "tier": c.decision.tier if c and c.decision else None, "demo": tid in pinned})
+                      "tier": c.decision.tier if c and c.decision else None, "demo": tid in pinned}, c))
     items.sort(key=lambda i: (not i["demo"], i["timestamp"]), reverse=False)
     demo_first = [i for i in items if i["demo"]] + sorted([i for i in items if not i["demo"]],
                                                           key=lambda i: i["timestamp"], reverse=True)
@@ -162,6 +163,8 @@ def network(entity_id: str, transaction_id: str | None = None) -> dict:
 def _case_out(case: Case) -> dict:
     out = case.model_dump(mode="json")
     out["audit"] = [a.model_dump(mode="json") for a in get_services().cases.audit(case.case_id)]
+    out["priority"] = ops.priority(case.ml.risk_score, case.decision.tier if case.decision else None)
+    out["sla"] = ops.sla(case.transaction["timestamp"], out["priority"], case.status)
     return out
 
 
@@ -271,6 +274,12 @@ def metrics() -> dict:
             tiers[c.decision.tier] += 1
     investigated = [c for c in cases if c.decision]
     validity = [c.evidence_validity_rate for c in investigated if c.evidence_validity_rate is not None]
+    # Analyst vs policy / AI agreement (the human-in-the-loop feedback loop). Overrides are logged with a reason.
+    reviewed = [c.analyst_action for c in cases if c.analyst_action]
+    finals = [(a, a.get("final_tier", service.analyst_final_tier(a.get("action", ""), a.get("tier"), a.get("policy_tier"))))
+              for a in reviewed if a.get("action") in ("approve", "modify", "close")]
+    pol = [(a, f) for a, f in finals if a.get("policy_tier") is not None]
+    ai = [(a, f) for a, f in finals if a.get("ai_tier") is not None]
     return {
         "live": {
             "transactions_screened": int(len(scored)), "candidates": candidates,
@@ -282,6 +291,13 @@ def metrics() -> dict:
             "single_score_latency": svc.scorer.latency_percentiles(),
             "case_store": svc.cases.backend + (" (degraded)" if svc.cases.degraded else ""),
             "ai_budget": service.ai_budget_status(),
+            "analyst_review": {
+                "cases_reviewed": len(finals),
+                "overrides": sum(1 for a, f in pol if f != a["policy_tier"]),
+                "policy_agreement_rate": round(sum(f == a["policy_tier"] for a, f in pol) / len(pol), 4) if pol else None,
+                "ai_compared": len(ai),
+                "ai_agreement_rate": round(sum(f == a["ai_tier"] for a, f in ai) / len(ai), 4) if ai else None,
+            },
         },
         "detection": _read_metrics("detection_metrics.json"),
         "benchmark": _read_metrics("benchmark.json"),

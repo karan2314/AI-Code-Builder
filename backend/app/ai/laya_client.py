@@ -40,6 +40,34 @@ def _id_token(audience: str) -> str:
         return tok
 
 
+_warm = {"last": 0.0, "running": False}
+WARM_INTERVAL_S = 240  # Cloud Run keeps an idle instance ~15 min; pinging every 4 min while in use keeps it warm
+
+
+def warm() -> bool:
+    """Non-blocking: wake the Laya service (model load takes ~60-80 s from cold) so the next investigation
+    gets a fast answer. Throttled; does nothing when Laya is disabled. Returns True if a warm-up was started."""
+    if not (settings.enable_laya and settings.laya_url):
+        return False
+    with _lock:
+        if _warm["running"] or time.time() - _warm["last"] < WARM_INTERVAL_S:
+            return False
+        _warm.update(running=True, last=time.time())
+
+    def _go() -> None:
+        url = settings.laya_url.rstrip("/")
+        try:
+            # Any authenticated request starts an instance; the service loads the model on startup.
+            requests.get(f"{url}/v1/health", headers={"Authorization": f"Bearer {_id_token(url)}"}, timeout=150)
+        except Exception:  # best effort only
+            pass
+        finally:
+            _warm["running"] = False
+
+    threading.Thread(target=_go, name="laya-warm", daemon=True).start()
+    return True
+
+
 def triage(case_id: str, state: dict) -> dict:
     if not (settings.enable_laya and settings.laya_url):
         raise LayaUnavailable("Laya is disabled (ENABLE_LAYA=false)")
