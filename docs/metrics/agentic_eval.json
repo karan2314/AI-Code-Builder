@@ -1,0 +1,473 @@
+{
+  "generated_at": "2026-10-18T07:32:37.503647+00:00",
+  "dataset_seed": 42,
+  "ai_enabled": true,
+  "gemini_model": "gemini-3.5-flash",
+  "synthesis_model": "gemini-3.5-flash",
+  "prompt_version": "2026.10.1",
+  "policy_version": "2026.10.2",
+  "model_version": "hgb-iso-202610161815",
+  "golden_scenarios": {
+    "hero_account_takeover": {
+      "transaction_id": "TXN-HERO-185K",
+      "label_is_fraud": 1,
+      "tier": 3,
+      "flagged": true,
+      "mode": "agentic",
+      "ai_error": null,
+      "llm_tier": 3,
+      "disagreement": false,
+      "evidence_items": 12,
+      "evidence_validity_rate": 1.0,
+      "dropped_findings": 0,
+      "cited_kinds": [
+        "amount_deviation",
+        "counterparty_familiarity",
+        "device_novelty",
+        "known_fraud_link",
+        "network_metrics",
+        "relationships",
+        "velocity"
+      ],
+      "agents_used": [
+        "customer_behavior_agent",
+        "fraud_network_agent",
+        "transaction_analysis_agent"
+      ],
+      "tool_calls": 12,
+      "latency_ms": 19632.3,
+      "input_tokens": 15137,
+      "output_tokens": 4570,
+      "pass_tier": true,
+      "pass_citations": true
+    },
+    "benign_high_value": {
+      "transaction_id": "TXN-BENIGN-150K",
+      "label_is_fraud": 0,
+      "tier": 1,
+      "flagged": false,
+      "mode": "agentic",
+      "ai_error": null,
+      "llm_tier": 1,
+      "disagreement": false,
+      "evidence_items": 11,
+      "evidence_validity_rate": 1.0,
+      "dropped_findings": 0,
+      "cited_kinds": [
+        "amount_deviation",
+        "counterparty_familiarity",
+        "device_novelty",
+        "history_summary",
+        "known_fraud_link",
+        "limit_utilization",
+        "ml_score",
+        "network_metrics",
+        "profile"
+      ],
+      "agents_used": [
+        "customer_behavior_agent",
+        "fraud_network_agent",
+        "transaction_analysis_agent"
+      ],
+      "tool_calls": 11,
+      "latency_ms": 23187.6,
+      "input_tokens": 12635,
+      "output_tokens": 5097,
+      "pass_tier": true,
+      "pass_citations": true
+    }
+  },
+  "sample": {
+    "size": 12,
+    "fraud": 8,
+    "legit": 4,
+    "tier_vs_label_agreement": 0.8333,
+    "agentic_runs": 12,
+    "fallback_runs": 0
+  },
+  "evidence_validity_rate_mean": 1.0,
+  "invalid_citations_total": 0,
+  "investigation_latency_ms": {
+    "p50": 18755.8,
+    "p95": 23205.6
+  },
+  "tokens_per_case": {
+    "input_mean": 12796,
+    "output_mean": 4538
+  },
+  "gemini_escalation_rate_test": 0.00717,
+  "cost": {
+    "avg_llm_cost_usd_per_investigated_case": 0.06003,
+    "llm_cost_usd_per_1000_transactions": 0.43037,
+    "formula": "mean(tokens) x price per token x escalation rate x 1000",
+    "pricing_source": "https://cloud.google.com/vertex-ai/generative-ai/pricing",
+    "pricing_checked": "2026-10-17"
+  },
+  "cases": [
+    {
+      "transaction_id": "TXN-HERO-R4",
+      "label_is_fraud": 1,
+      "tier": 3,
+      "flagged": true,
+      "mode": "agentic",
+      "ai_error": null,
+      "llm_tier": 3,
+      "disagreement": false,
+      "evidence_items": 11,
+      "evidence_validity_rate": 1.0,
+      "dropped_findings": 0,
+      "cited_kinds": [
+        "counterparty_familiarity",
+        "device_novelty",
+        "known_fraud_link",
+        "ml_score",
+        "network_metrics",
+        "velocity"
+      ],
+      "agents_used": [
+        "customer_behavior_agent",
+        "fraud_network_agent",
+        "transaction_analysis_agent"
+      ],
+      "tool_calls": 11,
+      "latency_ms": 18238.0,
+      "input_tokens": 12848,
+      "output_tokens": 3980
+    },
+    {
+      "transaction_id": "TXN-0160493",
+      "label_is_fraud": 1,
+      "tier": 2,
+      "flagged": true,
+      "mode": "agentic",
+      "ai_error": null,
+      "llm_tier": 2,
+      "disagreement": false,
+      "evidence_items": 11,
+      "evidence_validity_rate": 1.0,
+      "dropped_findings": 0,
+      "cited_kinds": [
+        "amount_deviation",
+        "counterparty_familiarity",
+        "device_novelty",
+        "ml_score",
+        "velocity"
+      ],
+      "agents_used": [
+        "customer_behavior_agent",
+        "fraud_network_agent",
+        "transaction_analysis_agent"
+      ],
+      "tool_calls": 11,
+      "latency_ms": 19273.5,
+      "input_tokens": 13059,
+      "output_tokens": 5178
+    },
+    {
+      "transaction_id": "TXN-0148430",
+      "label_is_fraud": 1,
+      "tier": 2,
+      "flagged": true,
+      "mode": "agentic",
+      "ai_error": null,
+      "llm_tier": 3,
+      "disagreement": true,
+      "evidence_items": 11,
+      "evidence_validity_rate": 1.0,
+      "dropped_findings": 0,
+      "cited_kinds": [
+        "amount_deviation",
+        "counterparty_familiarity",
+        "device_novelty",
+        "ml_score",
+        "velocity"
+      ],
+      "agents_used": [
+        "customer_behavior_agent",
+        "fraud_network_agent",
+        "transaction_analysis_agent"
+      ],
+      "tool_calls": 11,
+      "latency_ms": 21573.2,
+      "input_tokens": 12860,
+      "output_tokens": 5338
+    },
+    {
+      "transaction_id": "TXN-0164489",
+      "label_is_fraud": 1,
+      "tier": 1,
+      "flagged": false,
+      "mode": "agentic",
+      "ai_error": null,
+      "llm_tier": 2,
+      "disagreement": true,
+      "evidence_items": 11,
+      "evidence_validity_rate": 1.0,
+      "dropped_findings": 0,
+      "cited_kinds": [
+        "amount_deviation",
+        "counterparty_familiarity",
+        "device_novelty",
+        "ml_score",
+        "velocity"
+      ],
+      "agents_used": [
+        "customer_behavior_agent",
+        "fraud_network_agent",
+        "transaction_analysis_agent"
+      ],
+      "tool_calls": 11,
+      "latency_ms": 23239.0,
+      "input_tokens": 12684,
+      "output_tokens": 5533
+    },
+    {
+      "transaction_id": "TXN-0177712",
+      "label_is_fraud": 1,
+      "tier": 3,
+      "flagged": true,
+      "mode": "agentic",
+      "ai_error": null,
+      "llm_tier": 2,
+      "disagreement": true,
+      "evidence_items": 11,
+      "evidence_validity_rate": 1.0,
+      "dropped_findings": 0,
+      "cited_kinds": [
+        "amount_deviation",
+        "counterparty_familiarity",
+        "device_novelty",
+        "known_fraud_link",
+        "ml_score",
+        "network_metrics",
+        "profile"
+      ],
+      "agents_used": [
+        "customer_behavior_agent",
+        "fraud_network_agent",
+        "transaction_analysis_agent"
+      ],
+      "tool_calls": 11,
+      "latency_ms": 17402.0,
+      "input_tokens": 13116,
+      "output_tokens": 4146
+    },
+    {
+      "transaction_id": "TXN-0166456",
+      "label_is_fraud": 1,
+      "tier": 1,
+      "flagged": false,
+      "mode": "agentic",
+      "ai_error": null,
+      "llm_tier": 2,
+      "disagreement": true,
+      "evidence_items": 11,
+      "evidence_validity_rate": 1.0,
+      "dropped_findings": 0,
+      "cited_kinds": [
+        "amount_deviation",
+        "counterparty_familiarity",
+        "device_novelty",
+        "history_summary",
+        "ml_score"
+      ],
+      "agents_used": [
+        "customer_behavior_agent",
+        "fraud_network_agent",
+        "transaction_analysis_agent"
+      ],
+      "tool_calls": 11,
+      "latency_ms": 19554.8,
+      "input_tokens": 12331,
+      "output_tokens": 5134
+    },
+    {
+      "transaction_id": "TXN-0172848",
+      "label_is_fraud": 1,
+      "tier": 2,
+      "flagged": true,
+      "mode": "agentic",
+      "ai_error": null,
+      "llm_tier": 3,
+      "disagreement": true,
+      "evidence_items": 11,
+      "evidence_validity_rate": 1.0,
+      "dropped_findings": 0,
+      "cited_kinds": [
+        "amount_deviation",
+        "counterparty_familiarity",
+        "device_novelty",
+        "ml_score",
+        "velocity"
+      ],
+      "agents_used": [
+        "customer_behavior_agent",
+        "fraud_network_agent",
+        "transaction_analysis_agent"
+      ],
+      "tool_calls": 11,
+      "latency_ms": 16807.8,
+      "input_tokens": 12810,
+      "output_tokens": 4100
+    },
+    {
+      "transaction_id": "TXN-0155576",
+      "label_is_fraud": 1,
+      "tier": 3,
+      "flagged": true,
+      "mode": "agentic",
+      "ai_error": null,
+      "llm_tier": 3,
+      "disagreement": false,
+      "evidence_items": 12,
+      "evidence_validity_rate": 1.0,
+      "dropped_findings": 0,
+      "cited_kinds": [
+        "amount_deviation",
+        "counterparty_familiarity",
+        "device_novelty",
+        "known_fraud_link",
+        "network_metrics",
+        "profile"
+      ],
+      "agents_used": [
+        "customer_behavior_agent",
+        "fraud_network_agent",
+        "transaction_analysis_agent"
+      ],
+      "tool_calls": 11,
+      "latency_ms": 16204.0,
+      "input_tokens": 13414,
+      "output_tokens": 3865
+    },
+    {
+      "transaction_id": "TXN-0162389",
+      "label_is_fraud": 0,
+      "tier": 1,
+      "flagged": false,
+      "mode": "agentic",
+      "ai_error": null,
+      "llm_tier": 2,
+      "disagreement": true,
+      "evidence_items": 11,
+      "evidence_validity_rate": 1.0,
+      "dropped_findings": 0,
+      "cited_kinds": [
+        "amount_deviation",
+        "counterparty_familiarity",
+        "device_novelty",
+        "history_summary",
+        "known_fraud_link",
+        "network_metrics",
+        "profile"
+      ],
+      "agents_used": [
+        "customer_behavior_agent",
+        "fraud_network_agent",
+        "transaction_analysis_agent"
+      ],
+      "tool_calls": 11,
+      "latency_ms": 17966.6,
+      "input_tokens": 12730,
+      "output_tokens": 3990
+    },
+    {
+      "transaction_id": "TXN-0167367",
+      "label_is_fraud": 0,
+      "tier": 1,
+      "flagged": false,
+      "mode": "agentic",
+      "ai_error": null,
+      "llm_tier": 1,
+      "disagreement": false,
+      "evidence_items": 11,
+      "evidence_validity_rate": 1.0,
+      "dropped_findings": 0,
+      "cited_kinds": [
+        "amount_deviation",
+        "counterparty_familiarity",
+        "device_novelty",
+        "history_summary",
+        "known_fraud_link",
+        "network_metrics",
+        "profile"
+      ],
+      "agents_used": [
+        "customer_behavior_agent",
+        "fraud_network_agent",
+        "transaction_analysis_agent"
+      ],
+      "tool_calls": 11,
+      "latency_ms": 15558.3,
+      "input_tokens": 12543,
+      "output_tokens": 3709
+    },
+    {
+      "transaction_id": "TXN-0164171",
+      "label_is_fraud": 0,
+      "tier": 1,
+      "flagged": false,
+      "mode": "agentic",
+      "ai_error": null,
+      "llm_tier": 2,
+      "disagreement": true,
+      "evidence_items": 11,
+      "evidence_validity_rate": 1.0,
+      "dropped_findings": 0,
+      "cited_kinds": [
+        "amount_deviation",
+        "counterparty_familiarity",
+        "device_novelty",
+        "history_summary",
+        "known_fraud_link",
+        "ml_score",
+        "network_metrics",
+        "profile",
+        "relationships"
+      ],
+      "agents_used": [
+        "customer_behavior_agent",
+        "fraud_network_agent",
+        "transaction_analysis_agent"
+      ],
+      "tool_calls": 11,
+      "latency_ms": 19762.2,
+      "input_tokens": 12634,
+      "output_tokens": 5273
+    },
+    {
+      "transaction_id": "TXN-0168579",
+      "label_is_fraud": 0,
+      "tier": 1,
+      "flagged": false,
+      "mode": "agentic",
+      "ai_error": null,
+      "llm_tier": 1,
+      "disagreement": false,
+      "evidence_items": 11,
+      "evidence_validity_rate": 1.0,
+      "dropped_findings": 0,
+      "cited_kinds": [
+        "amount_deviation",
+        "counterparty_familiarity",
+        "device_novelty",
+        "history_summary",
+        "known_fraud_link",
+        "limit_utilization",
+        "ml_score",
+        "network_metrics",
+        "profile",
+        "relationships"
+      ],
+      "agents_used": [
+        "customer_behavior_agent",
+        "fraud_network_agent",
+        "transaction_analysis_agent"
+      ],
+      "tool_calls": 11,
+      "latency_ms": 16171.4,
+      "input_tokens": 12520,
+      "output_tokens": 4207
+    }
+  ]
+}

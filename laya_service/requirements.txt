@@ -1,0 +1,8 @@
+# torch is installed separately from the CPU-only index (see Dockerfile)
+laya==0.4.11
+transformers==5.20.1
+safetensors==0.8.0
+huggingface_hub==1.33.0
+numpy==2.5.4
+fastapi==0.143.3
+uvicorn==0.54.0

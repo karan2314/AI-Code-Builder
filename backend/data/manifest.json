@@ -1,0 +1,42 @@
+{
+  "seed": 42,
+  "start": "2026-07-01T00:00:00",
+  "tables": {
+    "transactions": {
+      "rows": 179242,
+      "sha256": "1b7000e0897bd1383e4e00952f9540c04d21b85775f8c8ad2b1e1b87f268af4e"
+    },
+    "customers": {
+      "rows": 1202,
+      "sha256": "90647a27cfd2c33e99b923b56b047e349b93cdc6dc6ea3942620edfdeb94621f"
+    },
+    "accounts": {
+      "rows": 1202,
+      "sha256": "6c53f870c9daedd3cdfe638a1c22be36d111ea6f3a84acbbdc83ca8479449f7b"
+    },
+    "counterparties": {
+      "rows": 2590,
+      "sha256": "aee77f053a4920e8f1e94f4c9e2f7ae058c60ab81041d355071f53120aa85798"
+    },
+    "entity_links": {
+      "rows": 40,
+      "sha256": "2af4f6c5504b6170cb1a16b8b26f3c3831a6cc7d6084bd51a4568ff39b09998f"
+    },
+    "fraud_cases": {
+      "rows": 32,
+      "sha256": "8375cb9ea399048293785a73de20f6fab0af7628a2edc6cfc76de6b12fe53cd8"
+    }
+  },
+  "fraud_rate": 0.00611,
+  "scenarios": {
+    "normal": 177092,
+    "benign_high_value": 1054,
+    "card_testing": 565,
+    "account_takeover": 326,
+    "mule_network": 70,
+    "account_takeover_subtle": 45,
+    "scam_fresh_mule": 45,
+    "first_party": 30,
+    "limited_history_fraud": 15
+  }
+}

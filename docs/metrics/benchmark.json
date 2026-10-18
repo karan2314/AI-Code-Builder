@@ -1,0 +1,55 @@
+{
+  "generated_at": "2026-10-18T07:32:37.503647+00:00",
+  "dataset_seed": 42,
+  "A_rules": {
+    "transactions": 30828,
+    "fraud_transactions": 214,
+    "candidates": 153,
+    "candidate_rate": 0.00496,
+    "precision": 0.9216,
+    "recall": 0.6589,
+    "pr_auc": 0.6747,
+    "false_positives_per_10k": 3.89,
+    "fraud_value_captured_pct": 92.36
+  },
+  "B_ml_blend": {
+    "transactions": 30828,
+    "fraud_transactions": 214,
+    "candidates": 221,
+    "candidate_rate": 0.00717,
+    "precision": 0.8235,
+    "recall": 0.8505,
+    "pr_auc": 0.8998,
+    "false_positives_per_10k": 12.65,
+    "fraud_value_captured_pct": 73.67
+  },
+  "D_ml_plus_agentic": {
+    "screening": "B_ml_blend",
+    "investigated_sample": 12,
+    "tier_vs_label_agreement": 0.8333,
+    "evidence_validity_rate_mean": 1.0,
+    "gemini_escalation_rate": 0.00717,
+    "investigation_latency_ms": {
+      "p50": 18755.8,
+      "p95": 23205.6
+    },
+    "llm_cost_usd_per_1000_transactions": 0.43037
+  },
+  "C_laya": {
+    "status": "measured",
+    "model": "convaiinnovations/laya-typed-decisions",
+    "routing_rule": "B candidates with route=investigate",
+    "candidates": 221,
+    "candidate_rate": 0.00717,
+    "precision": 0.8235,
+    "recall": 0.8505,
+    "false_positives_per_10k": 12.65,
+    "fraud_value_captured_pct": 73.67,
+    "laya_latency_ms": {
+      "service_p50": 9415.8,
+      "service_p95": 10486.7,
+      "roundtrip_p50": 9829.4
+    },
+    "source": "docs/metrics/laya_eval.json"
+  }
+}

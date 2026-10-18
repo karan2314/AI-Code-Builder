@@ -1,0 +1,12 @@
+{
+  "model": "gemini-3.5-flash",
+  "input_usd_per_1m_tokens": 1.50,
+  "output_usd_per_1m_tokens": 9.00,
+  "lite_model": "gemini-3.5-flash-lite",
+  "lite_input_usd_per_1m_tokens": 0.30,
+  "lite_output_usd_per_1m_tokens": 2.50,
+  "location": "global",
+  "note": "Standard (<=200k context) global pricing; output includes reasoning tokens.",
+  "source": "https://cloud.google.com/vertex-ai/generative-ai/pricing",
+  "checked": "2026-10-17"
+}

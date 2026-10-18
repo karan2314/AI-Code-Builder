@@ -1,0 +1,16 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Confirm live GCP/Firebase changes",
+      "trigger": "PreToolUse",
+      "description": "Prompts for confirmation before deploys, deletes, IAM, billing, or API changes on Google Cloud / Firebase.",
+      "matcher": "execute_bash|control_bash_process",
+      "action": {
+        "type": "command",
+        "command": "python3 .kiro/scripts/confirm-cloud-changes.py",
+        "timeout": 15
+      }
+    }
+  ]
+}

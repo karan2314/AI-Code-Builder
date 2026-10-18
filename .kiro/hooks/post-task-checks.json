@@ -1,0 +1,15 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Run lint, tests, build after each spec task",
+      "trigger": "PostTaskExec",
+      "description": "Runs ruff + pytest for backend and lint/test/build for frontend when those exist.",
+      "action": {
+        "type": "command",
+        "command": "bash .kiro/scripts/run-checks.sh",
+        "timeout": 600
+      }
+    }
+  ]
+}

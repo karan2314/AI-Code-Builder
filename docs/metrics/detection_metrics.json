@@ -1,0 +1,82 @@
+{
+  "generated_at": "2026-10-16T18:15:31.925519+00:00",
+  "dataset_seed": 42,
+  "model_version": "hgb-iso-202610161815",
+  "split": {
+    "train_days": "0-59",
+    "validation_days": "60-74",
+    "test_days": "75-89",
+    "test_transactions": 30828
+  },
+  "thresholds": {
+    "rules": 0.6403,
+    "blend": 0.6893,
+    "calibrated_on": "validation",
+    "max_candidate_rate": 0.03
+  },
+  "blend_weights": {
+    "ml": 0.6,
+    "rules": 0.3,
+    "anomaly": 0.1
+  },
+  "variants": {
+    "A_rules": {
+      "transactions": 30828,
+      "fraud_transactions": 214,
+      "candidates": 153,
+      "candidate_rate": 0.00496,
+      "precision": 0.9216,
+      "recall": 0.6589,
+      "pr_auc": 0.6747,
+      "false_positives_per_10k": 3.89,
+      "fraud_value_captured_pct": 92.36
+    },
+    "B_ml_blend": {
+      "transactions": 30828,
+      "fraud_transactions": 214,
+      "candidates": 221,
+      "candidate_rate": 0.00717,
+      "precision": 0.8235,
+      "recall": 0.8505,
+      "pr_auc": 0.8998,
+      "false_positives_per_10k": 12.65,
+      "fraud_value_captured_pct": 73.67
+    }
+  },
+  "batch_scoring_ms_per_1k_txns": 4.38,
+  "training_seconds": 5.1,
+  "top_global_features": [
+    [
+      "device_new",
+      0.7406
+    ],
+    [
+      "cp_new",
+      0.08044
+    ],
+    [
+      "cp_is_recipient",
+      0.04497
+    ],
+    [
+      "cp_prior_senders",
+      0.02026
+    ],
+    [
+      "amt_ratio_median",
+      0.01089
+    ],
+    [
+      "amt_ratio_p95",
+      0.00966
+    ],
+    [
+      "hour_dev",
+      0.00917
+    ],
+    [
+      "cp_age_days",
+      0.00825
+    ]
+  ]
+}

@@ -1,0 +1,27 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+
+# Node
+node_modules/
+frontend/dist/
+
+# Generated (reproducible from seed 42: app.data.generate + app.ml.train)
+backend/data/*.parquet
+backend/models/*.joblib
+backend/static/
+
+# Secrets / local config
+.env
+.env.*
+!.env.example
+*.pem
+*-key.json
+service-account*.json
+
+# OS / editor
+.DS_Store
+.firebase/

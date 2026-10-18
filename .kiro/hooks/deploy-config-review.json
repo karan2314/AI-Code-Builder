@@ -1,0 +1,15 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Review deploy config on save",
+      "trigger": "PostFileSave",
+      "description": "Checks Dockerfile, Cloud Build, Firebase, and rules files for Cloud Run/Firebase best practices and security.",
+      "matcher": "(Dockerfile|cloudbuild\\.yaml|firebase\\.json|apphosting\\.yaml|\\.gcloudignore|firestore\\.rules|storage\\.rules|infra/.*\\.sh)$",
+      "action": {
+        "type": "agent",
+        "prompt": "A deployment config file was just saved. Review it against .kiro/steering/gcp-deployment.md and security.md: Cloud Run listens on $PORT, non-root user, /healthz, dedicated service account, no secrets inline (use Secret Manager), max-instances set, Firebase rewrites to Cloud Run correct, Security Rules deny by default, GCP services only (no AWS). Report issues briefly and fix clear mistakes; do not deploy."
+      }
+    }
+  ]
+}
