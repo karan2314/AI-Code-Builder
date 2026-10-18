@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { ArrowRight } from "lucide-react";
 import { Fragment } from "react";
-import { Link } from "react-router-dom";
 import { Card, Chip, ErrorBox, Loading, PriorityBadge, Stat, TierBadge, score1000 } from "../components/ui";
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow, TableScrollBox, stickyHeader } from "../components/ui/table";
 import { api } from "../lib/api";
@@ -20,10 +19,7 @@ export default function Controls() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-sm text-slate-600">What decides what: the screening model, the deterministic policy, the autonomy ceiling and the operating rules. Read-only in this build.</p>
-        <Link to="/metrics" className="inline-flex items-center gap-1 text-sm font-medium text-teal-700 hover:underline">Evaluation results<ArrowRight className="h-4 w-4" aria-hidden /></Link>
-      </div>
+      <p className="text-sm text-slate-600">What decides what: the screening model, the deterministic policy, the autonomy ceiling and the operating rules. Read-only in this build.</p>
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <Stat label="Screening model" value={<span className="font-mono text-base">{d.model.version}</span>} hint="Gradient boosting + Isolation Forest + rules" />

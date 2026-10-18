@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import {
-  Bell, BriefcaseBusiness, FileClock, FlaskConical, LayoutDashboard, ListChecks, Network, PlayCircle, ShieldCheck,
+  Bell, BriefcaseBusiness, FileClock, LayoutDashboard, ListChecks, Network, PlayCircle, ShieldCheck,
   SlidersHorizontal,
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
@@ -14,7 +14,6 @@ import Controls from "./pages/Controls";
 import Customer360 from "./pages/Customer360";
 import Dashboard from "./pages/Dashboard";
 import EntityNetwork from "./pages/EntityNetwork";
-import Metrics from "./pages/Metrics";
 import Queue from "./pages/Queue";
 
 /** "Run new investigation": opens a dialog to investigate the next alert, upload a file to test, or score one transaction. */
@@ -48,7 +47,7 @@ function NotificationBell({ atRisk, className = "" }: { atRisk: number; classNam
 
 const PAGE_TITLES: Record<string, string> = {
   "/": "Fraud Operations Dashboard", "/queue": "Alert queue", "/cases": "Cases", "/network": "Entity network",
-  "/controls": "Models & controls", "/metrics": "Evaluation", "/audit": "Audit log",
+  "/controls": "Models & controls", "/audit": "Audit log",
 };
 
 function Shell({ children }: { children: ReactNode }) {
@@ -62,7 +61,6 @@ function Shell({ children }: { children: ReactNode }) {
     { to: "/cases", label: "Cases", icon: BriefcaseBusiness },
     { to: "/network", label: "Entity network", icon: Network },
     { to: "/controls", label: "Models & controls", icon: SlidersHorizontal },
-    { to: "/metrics", label: "Evaluation", icon: FlaskConical },
     { to: "/audit", label: "Audit log", icon: FileClock },
   ];
   const path = loc.pathname;
@@ -129,7 +127,6 @@ export default function App() {
         <Route path="/customers/:customerId" element={<Customer360 />} />
         <Route path="/network" element={<EntityNetwork />} />
         <Route path="/controls" element={<Controls />} />
-        <Route path="/metrics" element={<Metrics />} />
         <Route path="/audit" element={<AuditLog />} />
         <Route path="*" element={<p>Page not found.</p>} />
       </Routes>

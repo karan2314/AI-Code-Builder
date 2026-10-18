@@ -101,7 +101,7 @@ function ModelPerformance() {
     <div className="rounded-md bg-slate-50 p-2 text-center"><div className="text-[11px] text-slate-500">{label}</div><div className="text-lg font-semibold">{value}</div></div>
   );
   return (
-    <Card title="Model performance" actions={<Link to="/metrics" className="text-sm text-teal-700 underline">View details</Link>}>
+    <Card title="Model performance">
       <div role="tablist" aria-label="Model performance view" className="mb-3 flex gap-1">
         {(["detection", "investigation"] as const).map((k) => (
           <button key={k} role="tab" type="button" aria-selected={tab === k} onClick={() => setTab(k)}
