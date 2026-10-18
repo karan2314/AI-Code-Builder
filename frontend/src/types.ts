@@ -89,6 +89,7 @@ export interface AuditEvent {
 export type CaseStatus = "open" | "investigating" | "awaiting_review" | "manual_review" | "approved" | "modified" | "closed";
 
 export interface Case {
+  batch_id?: string | null;
   case_id: string;
   transaction_id: string;
   customer_id: string;
@@ -246,4 +247,84 @@ export interface MetricsResponse {
   } | null;
   benchmark: Record<string, unknown> | null;
   agentic: Record<string, unknown> | null;
+  impact?: Impact | null;
+}
+
+export interface BatchRow {
+  transaction_id: string;
+  customer_id: string;
+  timestamp: string;
+  amount_rupees: number;
+  channel: string;
+  counterparty_id: string;
+  device_id: string;
+  risk_score: number;
+  is_candidate: boolean;
+  reason_codes: string[];
+  label: number | null;
+  case_id: string | null;
+  case_status: string | null;
+  tier: Tier | null;
+}
+
+export interface BatchView {
+  batch_id: string;
+  filename: string;
+  created_at: string;
+  expires_at: string;
+  summary: {
+    rows: number;
+    candidates: number;
+    candidate_rate: number;
+    customers: number;
+    new_customers: number;
+    new_counterparties: number;
+    new_devices: number;
+    processing_ms: number;
+    time_range: [string, string];
+    model_version: string;
+    threshold: number;
+    labelled_metrics?: { fraud_rows: number; true_positives: number; false_positives: number; precision: number | null; recall: number | null };
+  };
+  ai_investigations: { used: number; limit: number };
+  rows: BatchRow[];
+  truncated: boolean;
+}
+
+export interface ImpactCounts {
+  alerts: number; caught: number; missed: number; false_alarms: number; true_negatives: number;
+  precision: number; recall: number; fraud_value_caught_rupees: number;
+}
+
+export interface Impact {
+  generated_at: string;
+  model_version: string;
+  test_transactions: number;
+  test_fraud_transactions: number;
+  total_fraud_value_rupees: number;
+  variants: { rules: ImpactCounts; fraudlens: ImpactCounts; union: ImpactCounts };
+  by_fraud_type: { type: string; label: string; fraud_transactions: number; rules_caught: number; fraudlens_caught: number; union_caught: number }[];
+  legit_high_value: { transactions: number; rules_flagged: number; fraudlens_flagged: number };
+  pr_curves: { rules: { recall: number; precision: number }[]; fraudlens: { recall: number; precision: number }[] };
+  funnel: {
+    screened: number; alerts: number; alerts_fraud: number; policy_tiers: Record<string, number>;
+    policy_tiers_fraud: Record<string, number>; escalated_tier2plus: number; escalated_precision: number | null;
+  };
+  policy_validation: ImpactCounts & { split: string };
+  headline: {
+    extra_frauds_caught: number; extra_frauds_caught_pct: number; recall_rules: number; recall_fraudlens: number;
+    pr_auc_rules: number; pr_auc_fraudlens: number; pr_auc_gain_pct: number; alert_rate: number; transactions_per_alert: number;
+    llm_calls_avoided_pct: number; extra_false_alarms: number;
+    llm_cost_per_1000_fraudlens_usd?: number; llm_cost_per_1000_if_all_usd?: number; llm_cost_reduction_x?: number;
+  };
+  agentic: null | {
+    sample: { size: number; fraud: number; legit: number; tier_vs_label_agreement: number };
+    evidence_validity_rate_mean: number | null; invalid_citations_total: number;
+    investigation_latency_ms: { p50: number | null; p95: number | null };
+    tokens_per_case: { input_mean: number | null; output_mean: number | null };
+    gemini_model: string; policy_version: string;
+    golden: Record<string, { tier: number; pass: boolean }>;
+  };
+  laya: null | { routed_investigate: number; queried: number; escalation_reduction: number; latency_ms: Record<string, number>; auc: Record<string, number> | null };
+  screening_ms_per_1k: number;
 }

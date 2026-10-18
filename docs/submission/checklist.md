@@ -13,4 +13,5 @@ Live URL: https://fraudlens-579191985047.us-central1.run.app
 | 7 | Video ≤ 3:00 recorded on the live URL (`video-script.md`), public link tested logged-out | ☐ user |
 | 8 | Public GitHub repo, no secrets in history | ☐ user |
 | 9 | During judging: optionally `MIN_INSTANCES=1` to avoid cold starts; set back to 0 afterwards | optional |
-| ✓ | 58 backend tests, lint, frontend build, Lighthouse accessibility 100 on 5 pages | done |
+| ✓ | Upload & Test (Run new investigation → Upload & test / Single transaction) live: template → screened → Gemini agent investigation Tier 3 |
+| ✓ | 82 backend tests, lint, frontend build, Lighthouse accessibility 100 on 5 pages | done |

@@ -4,6 +4,7 @@ Gemini synthesis -> policy decision -> simulated action -> persisted case + appe
 from __future__ import annotations
 
 import asyncio
+import contextvars
 import threading
 import time
 import uuid
@@ -20,7 +21,7 @@ from app.config import settings
 from app.observability import log_event
 from app.policy.engine import POLICY_VERSION, decide
 from app.schemas import AnalystAction, Case
-from app.services import get_services
+from app.services import BatchNotFound, get_base_services, get_services, use_batch
 from app.tools.laya import get_laya_decision
 
 SYSTEM = "system"
@@ -35,16 +36,24 @@ def _now() -> datetime:
     return datetime.now(UTC)
 
 
-def create_case(transaction_id: str) -> Case:
+def create_case(transaction_id: str, batch_id: str | None = None) -> Case:
+    try:
+        with use_batch(batch_id):
+            return _create_case(transaction_id, batch_id)
+    except BatchNotFound as e:
+        raise CaseError(str(e)) from e
+
+
+def _create_case(transaction_id: str, batch_id: str | None) -> Case:
     svc = get_services()
-    existing = svc.cases.find_by_transaction(transaction_id)
+    existing = svc.cases.find_by_transaction(transaction_id, batch_id)
     if existing:
         return existing
     txn = svc.repo.public_transaction(transaction_id)
     if txn is None:
         raise CaseError(f"unknown transaction {transaction_id}")
     ml = svc.scorer.score_existing(transaction_id)
-    case = Case(case_id=f"CASE-{uuid.uuid4().hex[:8].upper()}", transaction_id=transaction_id,
+    case = Case(case_id=f"CASE-{uuid.uuid4().hex[:8].upper()}", transaction_id=transaction_id, batch_id=batch_id,
                 customer_id=txn["customer_id"], status="open", created_at=_now(), updated_at=_now(),
                 transaction={**txn, "timestamp": txn["timestamp"].isoformat()}, ml=ml,
                 versions={"model": ml.model_version, "policy": POLICY_VERSION, "prompt": PROMPT_VERSION,
@@ -52,6 +61,7 @@ def create_case(transaction_id: str) -> Case:
     svc.cases.save(case)
     laya_client.warm()  # an investigation usually follows: wake the advisory model (async, throttled)
     svc.cases.append_audit(case.case_id, "case_created", SYSTEM, {"transaction_id": transaction_id,
+                                                                    "batch_id": batch_id,
                                                                     "risk_score": ml.risk_score,
                                                                     "reason_codes": ml.reason_codes})
     return case
@@ -129,15 +139,33 @@ def ai_budget_status() -> dict:
 
 
 def investigate(case_id: str, use_ai: bool | None = None) -> Case:
-    """Run the full investigation synchronously (the API calls it inside the request)."""
-    svc = get_services()
-    case = svc.cases.get(case_id)
+    """Run the full investigation synchronously (the API calls it inside the request). Cases opened from an
+    uploaded batch run inside that batch's isolated data overlay."""
+    case = get_base_services().cases.get(case_id)
     if case is None:
         raise CaseError(f"unknown case {case_id}")
+    try:
+        with use_batch(case.batch_id):
+            return _investigate(case_id, use_ai)
+    except BatchNotFound as e:
+        raise CaseError(f"{e}; upload the file again to investigate") from e
+
+
+def _investigate(case_id: str, use_ai: bool | None) -> Case:
+    svc = get_services()
+    case = svc.cases.get(case_id)
     use_ai = settings.gemini_enabled if use_ai is None else use_ai
-    budget_exhausted = False
+    budget_exhausted, budget_reason = False, ""
+    if use_ai and case.batch_id:
+        from app.batches.store import get_batch_store
+
+        if not get_batch_store().try_consume_ai(case.batch_id, settings.max_ai_investigations_per_batch):
+            use_ai, budget_exhausted = False, True
+            budget_reason = (f"per-upload AI limit reached ({settings.max_ai_investigations_per_batch} AI investigations "
+                             "per batch, cost control); deterministic investigation used")
     if use_ai and not _consume_ai_budget():
         use_ai, budget_exhausted = False, True
+        budget_reason = "daily AI investigation budget reached (cost control); deterministic investigation used"
         log_event("ai_budget_exhausted", case_id=case_id, **ai_budget_status())
     txn = svc.repo.public_transaction(case.transaction_id)
 
@@ -152,14 +180,15 @@ def investigate(case_id: str, use_ai: bool | None = None) -> Case:
     case.analyst_action = None
     svc.cases.save(case)
     if budget_exhausted:
-        case.ai_error = "daily AI investigation budget reached (cost control); deterministic investigation used"
+        case.ai_error = budget_reason
     svc.cases.append_audit(case_id, "investigation_started", SYSTEM,
                            {"ai_enabled": use_ai, "ai_budget_exhausted": budget_exhausted})
 
     t_start = time.perf_counter()
     # Variant C: the advisory Laya triage runs in parallel with the agents (it is a separate model service,
     # ~9 s warm), so its latency never eats into the agent time budget.
-    laya_future = _LAYA_POOL.submit(_laya_call, txn["transaction_id"]) if settings.enable_laya else None
+    laya_future = (_LAYA_POOL.submit(contextvars.copy_context().run, _laya_call, txn["transaction_id"])
+                   if settings.enable_laya else None)
     with InvestigationContext(case_id, txn, progress_cb=progress) as ctx:
         usage: dict = {}
         if use_ai:

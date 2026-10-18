@@ -40,6 +40,12 @@ class Settings(BaseSettings):
     laya_url: str = ""                 # e.g. https://fraudlens-laya-xxxx.run.app
     laya_timeout_s: float = 30.0       # first call may hit a cold start (model load)
 
+    # Upload & Test (batches): private GCS bucket with a 24 h lifecycle rule; metadata in Firestore
+    uploads_bucket: str = ""
+    batch_ttl_hours: int = 24
+    max_ai_investigations_per_batch: int = 10
+    uploads_per_hour_per_ip: int = 5
+
     # Demo / safety / cost control
     demo_mode: bool = True
     rate_limit_per_min: int = 20

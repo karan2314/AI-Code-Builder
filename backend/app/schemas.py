@@ -150,10 +150,12 @@ class Case(BaseModel):
     usage: dict[str, Any] = {}
     analyst_action: dict[str, Any] | None = None
     assignee: str | None = None
+    batch_id: str | None = None  # set for cases opened from an uploaded batch (Upload & Test)
 
 
 class CaseCreate(BaseModel):
     transaction_id: str = Field(pattern=r"^TXN-[A-Z0-9-]{3,40}$")
+    batch_id: str | None = Field(default=None, pattern=r"^BATCH-[A-Z0-9]{8,16}$")
 
 
 ANALYSTS = ("A. Sharma", "R. Verma", "S. Khan", "N. Iyer")

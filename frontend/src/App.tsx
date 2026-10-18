@@ -1,10 +1,11 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import {
   Bell, BriefcaseBusiness, FileClock, FlaskConical, LayoutDashboard, ListChecks, Network, PlayCircle, Search, ShieldCheck,
   SlidersHorizontal,
 } from "lucide-react";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { NavLink, Route, Routes, useLocation, useNavigate } from "react-router-dom";
+import NewInvestigationDialog from "./components/NewInvestigationDialog";
 import { api } from "./lib/api";
 import AuditLog from "./pages/AuditLog";
 import CaseWorkspace from "./pages/CaseWorkspace";
@@ -17,30 +18,23 @@ import Metrics from "./pages/Metrics";
 import Queue from "./pages/Queue";
 import type { SearchHit } from "./types";
 
-/** Opens the next alert in queue order that has no analyst decision yet, and starts its investigation. */
+/** "Run new investigation": opens a dialog to investigate the next alert, upload a file to test, or score one transaction. */
 export function NextAlertButton({ className = "" }: { className?: string }) {
-  const navigate = useNavigate();
-  const m = useMutation({
-    mutationFn: async () => {
-      const q = await api.queue(150);
-      const next = q.items.find((i) => ["new", "open"].includes(i.case_status)) ?? q.items.find((i) => !["approved", "modified", "closed"].includes(i.case_status));
-      if (!next) throw new Error("No alerts awaiting investigation");
-      const caseId = next.case_id ?? (await api.createCase(next.transaction_id)).case_id;
-      return { caseId, autorun: next.case_status === "new" || next.case_status === "open" };
-    },
-    onSuccess: (r) => navigate(`/cases/${r.caseId}${r.autorun ? "?autorun=1" : ""}`),
-  });
+  const [open, setOpen] = useState(false);
   return (
-    <button
-      type="button"
-      onClick={() => m.mutate()}
-      disabled={m.isPending}
-      title={m.error instanceof Error ? m.error.message : "Open the next alert in the priority queue and run the AI investigation"}
-      className={`inline-flex items-center gap-2 rounded-md bg-teal-700 px-3 py-2 text-sm font-semibold text-white hover:bg-teal-800 disabled:opacity-60 ${className}`}
-    >
-      <PlayCircle className="h-4 w-4" aria-hidden />
-      {m.isPending ? "Starting…" : "Run new investigation"}
-    </button>
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        aria-haspopup="dialog"
+        title="Investigate the next alert, or upload your own transactions to test"
+        className={`inline-flex items-center gap-2 rounded-md bg-teal-700 px-3 py-2 text-sm font-semibold text-white hover:bg-teal-800 ${className}`}
+      >
+        <PlayCircle className="h-4 w-4" aria-hidden />
+        Run new investigation
+      </button>
+      <NewInvestigationDialog open={open} onClose={() => setOpen(false)} />
+    </>
   );
 }
 
@@ -72,7 +66,7 @@ function GlobalSearch() {
         <label htmlFor="global-search" className="sr-only">Search by case, transaction, customer or entity ID</label>
         <Search className="pointer-events-none absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" aria-hidden />
         <input
-          id="global-search" value={q} onChange={(e) => { setQ(e.target.value); setOpen(true); }} onFocus={() => setOpen(true)}
+          id="global-search" role="combobox" aria-autocomplete="list" value={q} onChange={(e) => { setQ(e.target.value); setOpen(true); }} onFocus={() => setOpen(true)}
           onKeyDown={(e) => { if (e.key === "Escape") setOpen(false); }}
           placeholder="Search by case ID, transaction, customer or entity…" autoComplete="off"
           aria-controls={listId} aria-expanded={open && hits.length > 0}

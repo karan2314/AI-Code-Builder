@@ -31,19 +31,26 @@ def _row(df: pd.DataFrame, key: str) -> dict:
     return {k: _py(v) for k, v in df.loc[key].to_dict().items()}
 
 
+TABLES = ("transactions", "customers", "accounts", "counterparties", "fraud_cases", "entity_links")
+
+
 class DataRepository:
-    def __init__(self, data_dir: Path | None = None) -> None:
-        self.data_dir = Path(data_dir or settings.data_dir)
-        if not (self.data_dir / "transactions.parquet").exists():
-            raise FileNotFoundError(
-                f"Dataset not found in {self.data_dir}. Run: uv run python -m app.data.generate")
-        load = lambda n: pd.read_parquet(self.data_dir / f"{n}.parquet")  # noqa: E731
-        self.transactions = load("transactions").sort_values("timestamp", kind="stable").reset_index(drop=True)
-        self.customers = load("customers").set_index("customer_id", drop=False)
-        self.accounts = load("accounts").set_index("account_id", drop=False)
-        self.counterparties = load("counterparties").set_index("counterparty_id", drop=False)
-        self.fraud_cases = load("fraud_cases")
-        self.entity_links = load("entity_links")
+    def __init__(self, data_dir: Path | None = None, frames: dict[str, pd.DataFrame] | None = None) -> None:
+        """Load the seeded dataset from Parquet, or build from in-memory `frames` (used for upload batches,
+        which are the base dataset plus the uploaded rows)."""
+        if frames is None:
+            self.data_dir = Path(data_dir or settings.data_dir)
+            if not (self.data_dir / "transactions.parquet").exists():
+                raise FileNotFoundError(
+                    f"Dataset not found in {self.data_dir}. Run: uv run python -m app.data.generate")
+            frames = {n: pd.read_parquet(self.data_dir / f"{n}.parquet") for n in TABLES}
+        self.frames = frames
+        self.transactions = frames["transactions"].sort_values("timestamp", kind="stable").reset_index(drop=True)
+        self.customers = frames["customers"].set_index("customer_id", drop=False)
+        self.accounts = frames["accounts"].set_index("account_id", drop=False)
+        self.counterparties = frames["counterparties"].set_index("counterparty_id", drop=False)
+        self.fraud_cases = frames["fraud_cases"]
+        self.entity_links = frames["entity_links"]
         self.start: datetime = START
         self._tx_by_id = self.transactions.set_index("transaction_id", drop=False)
         self._idx_by_customer = self.transactions.groupby("customer_id").indices

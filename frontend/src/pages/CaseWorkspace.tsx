@@ -348,7 +348,7 @@ export default function CaseWorkspace() {
           </div>
           <p className="mt-1 text-xl font-bold">{formatINR(Number(t.amount_paise) / 100)} <span className="text-base font-normal text-slate-600">{String(t.channel).toUpperCase()} to <span className="font-mono">{String(t.counterparty_id)}</span></span></p>
           <p className="text-sm text-slate-600">
-            <span className="font-mono">{c.transaction_id}</span> · <Link className="font-mono underline" to={`/customers/${c.customer_id}`}>{c.customer_id}</Link> · device <span className="font-mono">{String(t.device_id)}</span> · {dateTime(String(t.timestamp))}
+            <span className="font-mono">{c.transaction_id}</span> · <Link className="font-mono underline" to={`/customers/${c.customer_id}${c.batch_id ? `?batch=${c.batch_id}` : ""}`}>{c.customer_id}</Link> · device <span className="font-mono">{String(t.device_id)}</span> · {dateTime(String(t.timestamp))}
           </p>
           <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
             <span>First-stage risk</span><RiskBar value={c.ml.risk_score} />
@@ -423,7 +423,7 @@ export default function CaseWorkspace() {
           <div className="grid gap-4 lg:grid-cols-2"><EvidenceList c={c} /><Timeline c={c} /></div>
         )}
         {tab === "network" && (
-          <Card title="Fraud network"><NetworkGraph entityId={String(t.counterparty_id)} transactionId={c.transaction_id} /></Card>
+          <Card title="Fraud network"><NetworkGraph entityId={String(t.counterparty_id)} transactionId={c.transaction_id} batchId={c.batch_id} /></Card>
         )}
         {tab === "audit" && (
           <div className="grid gap-4 lg:grid-cols-3">
@@ -443,11 +443,12 @@ function riskBand(score: number) {
 }
 
 function CaseDetails({ c }: { c: Case }) {
-  const p = useQuery({ queryKey: ["customer", c.customer_id], queryFn: () => api.customerProfile(c.customer_id), staleTime: 60_000 });
+  const p = useQuery({ queryKey: ["customer", c.customer_id, c.batch_id], queryFn: () => api.customerProfile(c.customer_id, c.batch_id ?? undefined), staleTime: 60_000 });
   const t = c.transaction;
   const rows: [string, ReactNode][] = [
     ["Case ID", <span className="font-mono">{c.case_id}</span>],
-    ["Customer ID", <Link to={`/customers/${c.customer_id}`} className="font-mono underline">{c.customer_id}</Link>],
+    ["Customer ID", <Link to={`/customers/${c.customer_id}${c.batch_id ? `?batch=${c.batch_id}` : ""}`} className="font-mono underline">{c.customer_id}</Link>],
+    ...(c.batch_id ? [["Source", <span className="font-mono text-xs">Uploaded batch {c.batch_id}</span>] as [string, ReactNode]] : []),
     ["Segment", p.data ? humanize(String(p.data.profile.segment)) : "…"],
     ["Account age", p.data ? `${formatNum(Number(p.data.profile.account_age_days))} days` : "…"],
     ["Usual median", p.data ? formatINR(p.data.baseline.median_rupees) : "…"],

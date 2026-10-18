@@ -68,3 +68,15 @@ mule-payment 0.6974, urgency 0.3476). Latency on 2 vCPU CPU is p50 9.4 s / p95 1
 on a T4 GPU. As the BRD prescribes, it stays **off the critical path** (`ENABLE_LAYA=false`). Fine-tuning Laya on
 labelled fraud decisions (supported by its RLCD training loop) or running it on a GPU is the documented next step.
 *[Tech40] [Innov25]*
+
+## 2026-10-18 · Upload & Test inside "Run new investigation" (no separate page)
+Users can upload CSV/JSON transactions, or score a single transaction, from the existing "Run new investigation"
+dialog. Each upload is an isolated **batch overlay**: base synthetic dataset + uploaded rows. It has its own repository
+view, point-in-time features, scores and network graph, activated per request through a context variable, so every
+existing tool, agent, policy rule and the audit trail works unchanged. Rows live in a private GCS bucket (24 h
+lifecycle, public access prevented, bucket-scoped `objectAdmin` for the runtime SA only). Metadata and the per-batch
+AI counter (transactional) live in Firestore with a TTL policy, so any Cloud Run instance can rebuild a batch on
+demand (LRU cache of 3). Validation is strict and whole-file: row-level errors, ID formats, account ownership,
+collisions with base IDs, time range, and a PII guard. Limits: 2 MB / 5,000 rows, 5 uploads per hour per IP
+(30 single-transaction checks), 10 AI investigations per batch. Memory raised to 2 GiB (measured ~0.7 GB with 3
+cached batches). *[Tech40] [UX10] [Impact25]*

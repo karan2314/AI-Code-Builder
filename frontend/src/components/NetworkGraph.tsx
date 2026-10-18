@@ -7,10 +7,10 @@ import { ErrorBox, Loading } from "./ui";
 const SHAPES: Record<string, string> = { customer: "ellipse", device: "round-rectangle", recipient: "diamond", merchant: "hexagon" };
 const COLORS: Record<string, string> = { customer: "#0369a1", device: "#6d28d9", recipient: "#b45309", merchant: "#475569" };
 
-export default function NetworkGraph({ entityId, transactionId }: { entityId: string; transactionId?: string }) {
+export default function NetworkGraph({ entityId, transactionId, batchId }: { entityId: string; transactionId?: string; batchId?: string | null }) {
   const ref = useRef<HTMLDivElement>(null);
   const [asList, setAsList] = useState(false);
-  const q = useQuery({ queryKey: ["network", entityId, transactionId], queryFn: () => api.network(entityId, transactionId) });
+  const q = useQuery({ queryKey: ["network", entityId, transactionId, batchId], queryFn: () => api.network(entityId, transactionId, batchId ?? undefined) });
 
   useEffect(() => {
     if (!q.data || !ref.current || asList) return;

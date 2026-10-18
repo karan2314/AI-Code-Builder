@@ -1,0 +1,548 @@
+{
+  "generated_at": "2026-10-18T16:19:16.805720+00:00",
+  "dataset_seed": 42,
+  "model_version": "hgb-iso-202610161815",
+  "test_transactions": 30828,
+  "test_fraud_transactions": 214,
+  "total_fraud_value_rupees": 4526261.3,
+  "variants": {
+    "rules": {
+      "alerts": 153,
+      "caught": 141,
+      "missed": 73,
+      "false_alarms": 12,
+      "true_negatives": 30602,
+      "precision": 0.9216,
+      "recall": 0.6589,
+      "fraud_value_caught_rupees": 4180625.91
+    },
+    "fraudlens": {
+      "alerts": 221,
+      "caught": 182,
+      "missed": 32,
+      "false_alarms": 39,
+      "true_negatives": 30575,
+      "precision": 0.8235,
+      "recall": 0.8505,
+      "fraud_value_caught_rupees": 3334536.02
+    },
+    "union": {
+      "alerts": 244,
+      "caught": 195,
+      "missed": 19,
+      "false_alarms": 49,
+      "true_negatives": 30565,
+      "precision": 0.7992,
+      "recall": 0.9112,
+      "fraud_value_caught_rupees": 4278618.03
+    }
+  },
+  "by_fraud_type": [
+    {
+      "type": "account_takeover",
+      "label": "Account takeover (new device + burst)",
+      "fraud_transactions": 62,
+      "rules_caught": 31,
+      "fraudlens_caught": 62,
+      "union_caught": 62,
+      "rules_rate": 0.5,
+      "fraudlens_rate": 1.0
+    },
+    {
+      "type": "account_takeover_subtle",
+      "label": "Subtle account takeover (own device)",
+      "fraud_transactions": 9,
+      "rules_caught": 0,
+      "fraudlens_caught": 2,
+      "union_caught": 2,
+      "rules_rate": 0.0,
+      "fraudlens_rate": 0.2222
+    },
+    {
+      "type": "mule_network",
+      "label": "Payment to mule network",
+      "fraud_transactions": 18,
+      "rules_caught": 18,
+      "fraudlens_caught": 13,
+      "union_caught": 18,
+      "rules_rate": 1.0,
+      "fraudlens_rate": 0.7222
+    },
+    {
+      "type": "scam_fresh_mule",
+      "label": "Scam to fresh, unlinked mule",
+      "fraud_transactions": 8,
+      "rules_caught": 0,
+      "fraudlens_caught": 0,
+      "union_caught": 0,
+      "rules_rate": 0.0,
+      "fraudlens_rate": 0.0
+    },
+    {
+      "type": "card_testing",
+      "label": "Card testing",
+      "fraud_transactions": 98,
+      "rules_caught": 77,
+      "fraudlens_caught": 98,
+      "union_caught": 98,
+      "rules_rate": 0.7857,
+      "fraudlens_rate": 1.0
+    },
+    {
+      "type": "limited_history_fraud",
+      "label": "Fraud on a new customer",
+      "fraud_transactions": 15,
+      "rules_caught": 15,
+      "fraudlens_caught": 7,
+      "union_caught": 15,
+      "rules_rate": 1.0,
+      "fraudlens_rate": 0.4667
+    },
+    {
+      "type": "first_party",
+      "label": "First-party fraud (looks normal)",
+      "fraud_transactions": 4,
+      "rules_caught": 0,
+      "fraudlens_caught": 0,
+      "union_caught": 0,
+      "rules_rate": 0.0,
+      "fraudlens_rate": 0.0
+    }
+  ],
+  "legit_high_value": {
+    "transactions": 158,
+    "rules_flagged": 3,
+    "fraudlens_flagged": 2
+  },
+  "pr_curves": {
+    "rules": [
+      {
+        "recall": 0.0,
+        "precision": 1.0
+      },
+      {
+        "recall": 0.025,
+        "precision": 1.0
+      },
+      {
+        "recall": 0.05,
+        "precision": 1.0
+      },
+      {
+        "recall": 0.075,
+        "precision": 1.0
+      },
+      {
+        "recall": 0.1,
+        "precision": 1.0
+      },
+      {
+        "recall": 0.125,
+        "precision": 1.0
+      },
+      {
+        "recall": 0.15,
+        "precision": 1.0
+      },
+      {
+        "recall": 0.175,
+        "precision": 1.0
+      },
+      {
+        "recall": 0.2,
+        "precision": 0.96
+      },
+      {
+        "recall": 0.225,
+        "precision": 0.9385
+      },
+      {
+        "recall": 0.25,
+        "precision": 0.9385
+      },
+      {
+        "recall": 0.275,
+        "precision": 0.9385
+      },
+      {
+        "recall": 0.3,
+        "precision": 0.9385
+      },
+      {
+        "recall": 0.325,
+        "precision": 0.9385
+      },
+      {
+        "recall": 0.35,
+        "precision": 0.9385
+      },
+      {
+        "recall": 0.375,
+        "precision": 0.9385
+      },
+      {
+        "recall": 0.4,
+        "precision": 0.9385
+      },
+      {
+        "recall": 0.425,
+        "precision": 0.9385
+      },
+      {
+        "recall": 0.45,
+        "precision": 0.9385
+      },
+      {
+        "recall": 0.475,
+        "precision": 0.9385
+      },
+      {
+        "recall": 0.5,
+        "precision": 0.9385
+      },
+      {
+        "recall": 0.525,
+        "precision": 0.9385
+      },
+      {
+        "recall": 0.55,
+        "precision": 0.9385
+      },
+      {
+        "recall": 0.575,
+        "precision": 0.9216
+      },
+      {
+        "recall": 0.6,
+        "precision": 0.9216
+      },
+      {
+        "recall": 0.625,
+        "precision": 0.9216
+      },
+      {
+        "recall": 0.65,
+        "precision": 0.9216
+      },
+      {
+        "recall": 0.675,
+        "precision": 0.3802
+      },
+      {
+        "recall": 0.7,
+        "precision": 0.2089
+      },
+      {
+        "recall": 0.725,
+        "precision": 0.1338
+      },
+      {
+        "recall": 0.75,
+        "precision": 0.1338
+      },
+      {
+        "recall": 0.775,
+        "precision": 0.1338
+      },
+      {
+        "recall": 0.8,
+        "precision": 0.1338
+      },
+      {
+        "recall": 0.825,
+        "precision": 0.1338
+      },
+      {
+        "recall": 0.85,
+        "precision": 0.1338
+      },
+      {
+        "recall": 0.875,
+        "precision": 0.1158
+      },
+      {
+        "recall": 0.9,
+        "precision": 0.1158
+      },
+      {
+        "recall": 0.925,
+        "precision": 0.1158
+      },
+      {
+        "recall": 0.95,
+        "precision": 0.0559
+      },
+      {
+        "recall": 0.975,
+        "precision": 0.0069
+      },
+      {
+        "recall": 1.0,
+        "precision": 0.0069
+      }
+    ],
+    "fraudlens": [
+      {
+        "recall": 0.0,
+        "precision": 1.0
+      },
+      {
+        "recall": 0.025,
+        "precision": 1.0
+      },
+      {
+        "recall": 0.05,
+        "precision": 1.0
+      },
+      {
+        "recall": 0.075,
+        "precision": 1.0
+      },
+      {
+        "recall": 0.1,
+        "precision": 1.0
+      },
+      {
+        "recall": 0.125,
+        "precision": 1.0
+      },
+      {
+        "recall": 0.15,
+        "precision": 1.0
+      },
+      {
+        "recall": 0.175,
+        "precision": 1.0
+      },
+      {
+        "recall": 0.2,
+        "precision": 1.0
+      },
+      {
+        "recall": 0.225,
+        "precision": 1.0
+      },
+      {
+        "recall": 0.25,
+        "precision": 1.0
+      },
+      {
+        "recall": 0.275,
+        "precision": 1.0
+      },
+      {
+        "recall": 0.3,
+        "precision": 1.0
+      },
+      {
+        "recall": 0.325,
+        "precision": 1.0
+      },
+      {
+        "recall": 0.35,
+        "precision": 1.0
+      },
+      {
+        "recall": 0.375,
+        "precision": 1.0
+      },
+      {
+        "recall": 0.4,
+        "precision": 1.0
+      },
+      {
+        "recall": 0.425,
+        "precision": 1.0
+      },
+      {
+        "recall": 0.45,
+        "precision": 1.0
+      },
+      {
+        "recall": 0.475,
+        "precision": 1.0
+      },
+      {
+        "recall": 0.5,
+        "precision": 1.0
+      },
+      {
+        "recall": 0.525,
+        "precision": 1.0
+      },
+      {
+        "recall": 0.55,
+        "precision": 1.0
+      },
+      {
+        "recall": 0.575,
+        "precision": 0.992
+      },
+      {
+        "recall": 0.6,
+        "precision": 0.9778
+      },
+      {
+        "recall": 0.625,
+        "precision": 0.964
+      },
+      {
+        "recall": 0.65,
+        "precision": 0.8659
+      },
+      {
+        "recall": 0.675,
+        "precision": 0.8603
+      },
+      {
+        "recall": 0.7,
+        "precision": 0.8603
+      },
+      {
+        "recall": 0.725,
+        "precision": 0.8594
+      },
+      {
+        "recall": 0.75,
+        "precision": 0.8594
+      },
+      {
+        "recall": 0.775,
+        "precision": 0.8593
+      },
+      {
+        "recall": 0.8,
+        "precision": 0.8592
+      },
+      {
+        "recall": 0.825,
+        "precision": 0.8592
+      },
+      {
+        "recall": 0.85,
+        "precision": 0.8235
+      },
+      {
+        "recall": 0.875,
+        "precision": 0.7203
+      },
+      {
+        "recall": 0.9,
+        "precision": 0.6565
+      },
+      {
+        "recall": 0.925,
+        "precision": 0.6074
+      },
+      {
+        "recall": 0.95,
+        "precision": 0.5982
+      },
+      {
+        "recall": 0.975,
+        "precision": 0.4772
+      },
+      {
+        "recall": 1.0,
+        "precision": 0.0081
+      }
+    ]
+  },
+  "funnel": {
+    "screened": 30828,
+    "alerts": 221,
+    "alerts_fraud": 182,
+    "policy_tiers": {
+      "1": 84,
+      "2": 86,
+      "3": 51
+    },
+    "policy_tiers_fraud": {
+      "1": 48,
+      "2": 83,
+      "3": 51
+    },
+    "escalated_tier2plus": 137,
+    "escalated_precision": 0.9781,
+    "note": "Policy tiers from deterministic tool evidence (no LLM) for every test alert"
+  },
+  "policy_validation": {
+    "split": "validation candidates",
+    "alerts": 128,
+    "caught": 126,
+    "missed": 48,
+    "false_alarms": 2,
+    "true_negatives": 11,
+    "precision": 0.9844,
+    "recall": 0.7241
+  },
+  "headline": {
+    "extra_frauds_caught": 41,
+    "extra_frauds_caught_pct": 0.2908,
+    "recall_rules": 0.6589,
+    "recall_fraudlens": 0.8505,
+    "pr_auc_rules": 0.6747,
+    "pr_auc_fraudlens": 0.8998,
+    "pr_auc_gain_pct": 0.3336,
+    "alert_rate": 0.00717,
+    "transactions_per_alert": 139,
+    "llm_calls_avoided_pct": 0.9928,
+    "extra_false_alarms": 27,
+    "formulas": {
+      "extra_frauds_caught": "FraudLens caught - rules caught (test split)",
+      "llm_calls_avoided_pct": "1 - alerts / transactions screened",
+      "llm_cost_if_all_per_1000": "measured cost per investigated case x 1000"
+    },
+    "llm_cost_per_1000_fraudlens_usd": 0.43037,
+    "llm_cost_per_1000_if_all_usd": 60.03,
+    "llm_cost_reduction_x": 139
+  },
+  "agentic": {
+    "sample": {
+      "size": 12,
+      "fraud": 8,
+      "legit": 4,
+      "tier_vs_label_agreement": 0.8333,
+      "agentic_runs": 12,
+      "fallback_runs": 0
+    },
+    "evidence_validity_rate_mean": 1.0,
+    "invalid_citations_total": 0,
+    "investigation_latency_ms": {
+      "p50": 18755.8,
+      "p95": 23205.6
+    },
+    "tokens_per_case": {
+      "input_mean": 12796,
+      "output_mean": 4538
+    },
+    "gemini_model": "gemini-3.5-flash",
+    "policy_version": "2026.10.2",
+    "golden": {
+      "hero_account_takeover": {
+        "tier": 3,
+        "pass": true
+      },
+      "benign_high_value": {
+        "tier": 1,
+        "pass": true
+      }
+    }
+  },
+  "laya": {
+    "routed_investigate": 221,
+    "queried": 221,
+    "escalation_reduction": 0.0,
+    "latency_ms": {
+      "service_p50": 9415.8,
+      "service_p95": 10486.7,
+      "roundtrip_p50": 9829.4
+    },
+    "auc": {
+      "p_ato": 0.3451,
+      "p_mule": 0.6974,
+      "urgency": 0.3476
+    }
+  },
+  "screening_ms_per_1k": 4.38
+}

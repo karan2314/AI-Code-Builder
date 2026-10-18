@@ -21,7 +21,7 @@ class CaseRepository(Protocol):
 
     def save(self, case: Case) -> None: ...
     def get(self, case_id: str) -> Case | None: ...
-    def find_by_transaction(self, transaction_id: str) -> Case | None: ...
+    def find_by_transaction(self, transaction_id: str, batch_id: str | None = None) -> Case | None: ...
     def list(self, limit: int = 100) -> list[Case]: ...
     def append_audit(self, case_id: str, event_type: str, actor: str, details: dict[str, Any]) -> AuditEvent: ...
     def audit(self, case_id: str) -> list[AuditEvent]: ...
@@ -49,9 +49,9 @@ class InMemoryCaseRepository:
         c = self._cases.get(case_id)
         return c.model_copy(deep=True) if c else None
 
-    def find_by_transaction(self, transaction_id: str) -> Case | None:
+    def find_by_transaction(self, transaction_id: str, batch_id: str | None = None) -> Case | None:
         for c in self._cases.values():
-            if c.transaction_id == transaction_id:
+            if c.transaction_id == transaction_id and c.batch_id == batch_id:
                 return c.model_copy(deep=True)
         return None
 
@@ -86,9 +86,14 @@ class FirestoreCaseRepository:
         snap = self.db.collection("cases").document(case_id).get()
         return Case.model_validate(snap.to_dict()) if snap.exists else None
 
-    def find_by_transaction(self, transaction_id: str) -> Case | None:
-        docs = self.db.collection("cases").where(filter=self._fs.FieldFilter("transaction_id", "==", transaction_id)).limit(1).get()
-        return Case.model_validate(docs[0].to_dict()) if docs else None
+    def find_by_transaction(self, transaction_id: str, batch_id: str | None = None) -> Case | None:
+        docs = self.db.collection("cases").where(
+            filter=self._fs.FieldFilter("transaction_id", "==", transaction_id)).limit(25).get()
+        for d in docs:
+            c = Case.model_validate(d.to_dict())
+            if c.batch_id == batch_id:
+                return c
+        return None
 
     def list(self, limit: int = 100) -> list[Case]:
         docs = self.db.collection("cases").order_by("updated_at", direction=self._fs.Query.DESCENDING).limit(limit).get()

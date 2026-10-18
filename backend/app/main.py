@@ -8,8 +8,10 @@ from pathlib import Path
 from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse, JSONResponse
 
+from app.api.batches import router as batches_router
 from app.api.ops import router as ops_router
 from app.api.routes import router
+from app.batches.parse import MAX_BYTES as UPLOAD_MAX_BYTES
 from app.config import settings
 from app.observability import log_event, setup_logging
 from app.policy.engine import POLICY_VERSION
@@ -29,6 +31,7 @@ async def lifespan(_: FastAPI):
 app = FastAPI(title="FraudLens AI", version="0.1.0", lifespan=lifespan,
               description="Agentic fraud investigation on SYNTHETIC data. All actions are simulated.")
 app.include_router(router)
+app.include_router(batches_router)
 app.include_router(ops_router)
 
 MAX_BODY_BYTES = 256 * 1024
@@ -51,7 +54,8 @@ DOCS_CSP = "default-src 'self' https://cdn.jsdelivr.net; img-src 'self' data: ht
 
 @app.middleware("http")
 async def guard_and_headers(request: Request, call_next):
-    if int(request.headers.get("content-length") or 0) > MAX_BODY_BYTES:
+    limit = UPLOAD_MAX_BYTES + 4096 if request.url.path == "/api/batches" else MAX_BODY_BYTES
+    if int(request.headers.get("content-length") or 0) > limit:
         return JSONResponse({"detail": "request too large"}, status_code=413)
     response = await call_next(request)
     for k, v in SECURITY_HEADERS.items():

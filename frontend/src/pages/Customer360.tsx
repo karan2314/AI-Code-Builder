@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import { CartesianGrid, ReferenceLine, ResponsiveContainer, Scatter, ScatterChart, Tooltip, XAxis, YAxis } from "recharts";
 import { Card, ErrorBox, Loading, Stat } from "../components/ui";
 import { api } from "../lib/api";
@@ -7,8 +7,10 @@ import { formatINR, formatNum } from "../lib/format";
 
 export default function Customer360() {
   const { customerId = "" } = useParams();
-  const p = useQuery({ queryKey: ["customer", customerId], queryFn: () => api.customerProfile(customerId) });
-  const h = useQuery({ queryKey: ["history", customerId], queryFn: () => api.customerHistory(customerId, 30) });
+  const [params] = useSearchParams();
+  const batchId = params.get("batch") ?? undefined;
+  const p = useQuery({ queryKey: ["customer", customerId, batchId], queryFn: () => api.customerProfile(customerId, batchId) });
+  const h = useQuery({ queryKey: ["history", customerId, batchId], queryFn: () => api.customerHistory(customerId, 30, batchId) });
   if (p.isLoading) return <Loading />;
   if (p.error) return <ErrorBox error={p.error} />;
   const { profile, limits, baseline } = p.data!;

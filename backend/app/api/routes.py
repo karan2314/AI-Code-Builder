@@ -17,7 +17,7 @@ from app.config import settings
 from app.data.generate import BENIGN_TXN, HERO_TXN
 from app.ml.rules import describe
 from app.schemas import AnalystAction, BatchScoreResult, Case, CaseCreate, ScoreResult, Transaction
-from app.services import get_services
+from app.services import BatchNotFound, get_services, use_batch
 
 router = APIRouter(prefix="/api")
 
@@ -112,8 +112,25 @@ def reason_code_descriptions() -> dict:
 
 
 # ---- customers ------------------------------------------------------------------------------------
+def _batch(batch_id: str | None):
+    if batch_id is not None and not __import__("re").match(r"^BATCH-[A-Z0-9]{8,16}$", batch_id):
+        raise HTTPException(404, "batch not found")
+    try:
+        return use_batch(batch_id)
+    except BatchNotFound as e:
+        raise HTTPException(404, str(e)) from e
+
+
 @router.get("/customers/{customer_id}/profile")
-def customer_profile(customer_id: str) -> dict:
+def customer_profile(customer_id: str, batch_id: str | None = None) -> dict:
+    try:
+        with _batch(batch_id):
+            return _customer_profile(customer_id)
+    except BatchNotFound as e:
+        raise HTTPException(404, str(e)) from e
+
+
+def _customer_profile(customer_id: str) -> dict:
     svc = get_services()
     c = svc.repo.customer(customer_id)
     if c is None:
@@ -130,7 +147,15 @@ def customer_profile(customer_id: str) -> dict:
 
 
 @router.get("/customers/{customer_id}/history")
-def customer_history(customer_id: str, days: int = 30) -> dict:
+def customer_history(customer_id: str, days: int = 30, batch_id: str | None = None) -> dict:
+    try:
+        with _batch(batch_id):
+            return _customer_history(customer_id, days)
+    except BatchNotFound as e:
+        raise HTTPException(404, str(e)) from e
+
+
+def _customer_history(customer_id: str, days: int) -> dict:
     svc = get_services()
     if svc.repo.customer(customer_id) is None:
         raise _not_found("customer")
@@ -146,7 +171,15 @@ def customer_history(customer_id: str, days: int = 30) -> dict:
 
 # ---- network -------------------------------------------------------------------------------------
 @router.get("/network/{entity_id}")
-def network(entity_id: str, transaction_id: str | None = None) -> dict:
+def network(entity_id: str, transaction_id: str | None = None, batch_id: str | None = None) -> dict:
+    try:
+        with _batch(batch_id):
+            return _network(entity_id, transaction_id)
+    except BatchNotFound as e:
+        raise HTTPException(404, str(e)) from e
+
+
+def _network(entity_id: str, transaction_id: str | None) -> dict:
     svc = get_services()
     at = None
     if transaction_id:
@@ -179,7 +212,7 @@ def list_cases(limit: int = 50) -> dict:
 def create_case(body: CaseCreate, request: Request) -> dict:
     rate_limit(request)
     try:
-        return _case_out(service.create_case(body.transaction_id))
+        return _case_out(service.create_case(body.transaction_id, body.batch_id))
     except service.CaseError as e:
         raise HTTPException(404, str(e)) from e
 
@@ -302,4 +335,5 @@ def metrics() -> dict:
         "detection": _read_metrics("detection_metrics.json"),
         "benchmark": _read_metrics("benchmark.json"),
         "agentic": _read_metrics("agentic_eval.json"),
+        "impact": _read_metrics("impact.json"),
     }

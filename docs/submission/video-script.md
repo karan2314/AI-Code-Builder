@@ -13,7 +13,8 @@ run the hero scenario once so the AI result is warm, close other tabs and hide b
 | 1:45–2:05 | "Gemini writes the summary, and every claim links to evidence. Click one and it jumps to the proof. Missing or conflicting evidence is called out, and any claim without evidence is removed automatically." | Summary → click an evidence chip → highlighted evidence |
 | 2:05–2:20 | "The network graph shows why: the recipient shares a device with confirmed mule accounts." | Network tab, red-outlined nodes |
 | 2:20–2:35 | "Gemini only advises. A deterministic, versioned policy decides: Tier 3, Contain. The restriction is simulated, the analyst approves, and everything lands in an append-only audit trail." | Policy panel, SIMULATED actions, Approve, audit trail |
-| 2:35–2:50 | "On held-out data, the ML blend raises recall well above rules alone, and we publish every metric from our evaluation scripts. The architecture scales on Cloud Run, with LLM cost tied to candidates, not volume." | Evaluation page table |
+| 2:35–2:45 | "And it's not just a canned demo: upload your own transactions, and FraudLens screens them in under a second and lets you investigate any row." | Run new investigation → Upload & test → template → results table → Investigate |
+| 2:45–2:50 | "On held-out data, the ML blend raises recall well above rules alone, and we publish every metric from our evaluation scripts. The architecture scales on Cloud Run, with LLM cost tied to candidates, not volume." | Evaluation page table |
 | 2:50–3:00 | "FraudLens AI: explainable, auditable fraud investigation, built with Gemini on Google Cloud." | End card: URL, repo, "synthetic data, simulated actions" |
 
 Do not state numbers that aren't on screen; read them from the Evaluation page.
