@@ -178,29 +178,30 @@ export default function Dashboard() {
         <div className="xl:col-span-2">{q.data ? <PriorityQueue items={queueItems} /> : <Loading />}</div>
         <div className="space-y-4">
           <Card title="Alert priority mix (7 days)">
-            <div className="flex items-center gap-4">
-              <div className="relative h-40 w-40 shrink-0" role="img" aria-label={prio.map((x) => `${x.name}: ${x.value}`).join(", ")}>
-                <ResponsiveContainer>
-                  <PieChart>
-                    <Pie data={prio} dataKey="value" nameKey="name" innerRadius={48} outerRadius={70} paddingAngle={2} isAnimationActive={false}>
-                      {prio.map((x) => <Cell key={x.p} fill={PRIO_COLOR[x.p]} />)}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
-                <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-xl font-semibold">{formatNum(totalAlerts)}</span><span className="text-[11px] text-slate-500">alerts</span>
-                </div>
+            {/* Thick ring with rounded segment ends, total in the centre, legend list below a divider. */}
+            <div className="relative mx-auto h-48 w-48" role="img" aria-label={`${formatNum(totalAlerts)} alerts: ${prio.map((x) => `${x.name} ${x.value}`).join(", ")}`}>
+              <ResponsiveContainer>
+                <PieChart>
+                  <Pie data={prio} dataKey="value" nameKey="name" innerRadius={66} outerRadius={90} paddingAngle={4} cornerRadius={12}
+                    startAngle={90} endAngle={-270} stroke="none" isAnimationActive={false}>
+                    {prio.map((x) => <Cell key={x.p} fill={PRIO_COLOR[x.p]} />)}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+                <span className="text-xs text-muted-foreground">Total alerts</span>
+                <span className="text-3xl font-semibold tracking-tight text-slate-900">{formatNum(totalAlerts)}</span>
               </div>
-              <ul className="flex-1 space-y-1.5 text-sm">
-                {prio.map((x) => (
-                  <li key={x.p} className="flex items-center justify-between gap-2">
-                    <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full" style={{ background: PRIO_COLOR[x.p] }} aria-hidden />{x.name}</span>
-                    <span className="font-semibold">{x.value} <span className="text-xs font-normal text-slate-500">{pct(x.value / Math.max(totalAlerts, 1), 0)}</span></span>
-                  </li>
-                ))}
-              </ul>
             </div>
+            <ul className="mt-4 space-y-2.5 border-t border-border pt-4 text-sm">
+              {prio.map((x) => (
+                <li key={x.p} className="flex items-center justify-between gap-2">
+                  <span className="flex items-center gap-2.5 font-medium text-slate-900"><span className="h-2.5 w-2.5 rounded-full" style={{ background: PRIO_COLOR[x.p] }} aria-hidden />{x.name}</span>
+                  <span className="tabular-nums text-slate-900">{formatNum(x.value)} <span className="ml-1 text-xs text-slate-500">{pct(x.value / Math.max(totalAlerts, 1), 0)}</span></span>
+                </li>
+              ))}
+            </ul>
           </Card>
           <ModelPerformance />
         </div>
