@@ -25,3 +25,6 @@ service-account*.json
 # OS / editor
 .DS_Store
 .firebase/
+
+# Kiro workspace config (local only)
+.kiro/
